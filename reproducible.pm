@@ -28,7 +28,7 @@ sub reproduce {
 
     if ( $cmd =~ /\s-?-reproduce\s+(\S+)/ ) {
         my $old_repro_file = $1;
-        _reproduce_cmd($old_repro_file, $repro_file);
+        _reproduce_cmd( $prog, $old_repro_file, $repro_file );
     }
     else {
         _archive_cmd( $cmd, $repro_file );
@@ -36,7 +36,7 @@ sub reproduce {
 }
 
 sub _reproduce_cmd {
-    my ( $old_repro_file, $repro_file ) = @_;
+    my ( $prog, $old_repro_file, $repro_file ) = @_;
 
     die "Reproducible archive file ($old_repro_file) does not exists.\n"
         unless -e $old_repro_file;
@@ -45,10 +45,10 @@ sub _reproduce_cmd {
     close $old_repro_fh;
     chomp $cmd;
 
-    _archive_cmd( $cmd, $repro_file );
-    my @args = split /\s/, $cmd;
-    shift @args;
+    my ( $old_prog, @args ) = split /\s/, $cmd;
     @ARGV = @args;
+    _validate_prog_name( $old_prog, $prog, @args );
+    _archive_cmd( $cmd, $repro_file );
 }
 
 sub _archive_cmd {
@@ -56,6 +56,17 @@ sub _archive_cmd {
     open my $repro_fh, ">", $repro_file;
     say $repro_fh $cmd;
     close $repro_fh;
+}
+
+sub _validate_prog_name {
+    my ( $old_prog, $prog, @args ) = @_;
+    die <<EOF if $old_prog ne $prog;
+Current ($prog) and archived ($old_prog) program names don't match!
+If this was expected (e.g., filename was changed), please re-run as:
+
+    perl $prog @args
+
+EOF
 }
 
 1;
