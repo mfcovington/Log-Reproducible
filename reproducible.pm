@@ -14,16 +14,7 @@ use POSIX qw(strftime);
 
 sub reproduce {
     my $dir = shift;
-    if ( !defined $dir ) {
-        if ( defined $ENV{REPRO_DIR} ) {
-            $dir = $ENV{REPRO_DIR};
-        }
-        else {
-            my $cwd = getcwd;
-            $dir = "$cwd/repro-archive";
-        }
-    }
-    make_path $dir;
+    $dir = _set_dir($dir);
 
     my $prog = $0;
     $prog = basename $prog;
@@ -38,6 +29,21 @@ sub reproduce {
     else {
         _archive_cmd( $cmd, $repro_file );
     }
+}
+
+sub _set_dir {
+    my $dir = shift;
+    if ( !defined $dir ) {
+        if ( defined $ENV{REPRO_DIR} ) {
+            $dir = $ENV{REPRO_DIR};
+        }
+        else {
+            my $cwd = getcwd;
+            $dir = "$cwd/repro-archive";
+        }
+    }
+    make_path $dir;
+    return $dir;
 }
 
 sub _reproduce_cmd {
