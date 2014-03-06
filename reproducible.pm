@@ -16,11 +16,8 @@ sub reproduce {
     my $dir = shift;
     $dir = _set_dir($dir);
 
-    my $prog = $0;
-    $prog = basename $prog;
-    my $cmd = join " ", $prog, @ARGV;
-    my $now = strftime "%Y%m%d.%H%M%S", localtime;
-    my $repro_file = "$dir/rlog-$prog-$now";
+    my ( $prog, $cmd ) = _parse_command();
+    my $repro_file = _set_repro_file( $dir, $prog );
 
     if ( $cmd =~ /\s-?-reproduce\s+(\S+)/ ) {
         my $old_repro_file = $1;
@@ -44,6 +41,19 @@ sub _set_dir {
     }
     make_path $dir;
     return $dir;
+}
+
+sub _parse_command {
+    my $prog = $0;
+    $prog = basename $prog;
+    my $cmd = join " ", $prog, @ARGV;
+    return $prog, $cmd;
+}
+
+sub _set_repro_file {
+    my ( $dir, $prog ) = @_;
+    my $now = strftime "%Y%m%d.%H%M%S", localtime;
+    my $repro_file = "$dir/rlog-$prog-$now";
 }
 
 sub _reproduce_cmd {
