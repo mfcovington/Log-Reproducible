@@ -9,7 +9,7 @@ use warnings;
 use autodie;
 use feature 'say';
 use Getopt::Long;
-use reproducible;
+use Log::Reproducible;
 reproduce();
 
 # default values
