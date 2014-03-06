@@ -15,8 +15,13 @@ use POSIX qw(strftime);
 sub reproduce {
     my $dir = shift;
     if ( !defined $dir ) {
-        my $cwd = getcwd;
-        $dir = "$cwd/repro-archive";
+        if ( defined $ENV{REPRO_DIR} ) {
+            $dir = $ENV{REPRO_DIR};
+        }
+        else {
+            my $cwd = getcwd;
+            $dir = "$cwd/repro-archive";
+        }
     }
     make_path $dir;
 
