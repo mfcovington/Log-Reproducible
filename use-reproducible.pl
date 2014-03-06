@@ -26,3 +26,4 @@ my $options = GetOptions (
 say "a: $a";
 say "b: $b";
 say "c: $c";
+say "extra: @ARGV";
