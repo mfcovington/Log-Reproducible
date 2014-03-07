@@ -12,6 +12,11 @@ use File::Path 'make_path';
 use File::Basename;
 use POSIX qw(strftime);
 
+#TODO: Set dir with --reprodir XXX
+#TODO: Add note with --repronote 'XXX'
+#TODO: Add verbose mode
+#TODO: Standalone script that can be used upstream of any command line functions
+
 sub reproduce {
     my $dir = shift;
     $dir = _set_dir($dir);
