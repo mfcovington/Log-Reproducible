@@ -1,4 +1,4 @@
-# Log::Reproducible (0.1.0)
+# Log::Reproducible (0.1.1)
 
 Increase your reproducibility with the Perl module Log::Reproducible. Set it and forget it... *until you need it!*
 
@@ -12,6 +12,8 @@ Just add these two lines near the top of your Perl script before accessing `@ARG
 use Log::Reproducible;
 reproduce();
 ```
+
+That's all!
 
 Now, every time you run your script, the command line options and other arguments passed to it will be archived in a simple log file whose name reflects the script and the date/time it began running.
 
