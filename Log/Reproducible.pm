@@ -20,6 +20,7 @@ use POSIX qw(strftime);
 sub reproduce {
     my $dir = shift;
     $dir = _set_dir($dir);
+    make_path $dir;
 
     my ( $prog, $cmd ) = _parse_command();
     my $repro_file = _set_repro_file( $dir, $prog );
@@ -44,7 +45,6 @@ sub _set_dir {
             $dir = "$cwd/repro-archive";
         }
     }
-    make_path $dir;
     return $dir;
 }
 
