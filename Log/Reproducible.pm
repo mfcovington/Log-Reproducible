@@ -49,6 +49,9 @@ sub _set_dir {
 }
 
 sub _parse_command {
+    for (@ARGV) {
+        $_ = "'$_'" if /\s/;
+    }
     my $prog = $0;
     $prog = basename $prog;
     my $cmd = join " ", $prog, @ARGV;
@@ -71,7 +74,7 @@ sub _reproduce_cmd {
     close $old_repro_fh;
     chomp $cmd;
 
-    my ( $old_prog, @args ) = split /\s/, $cmd;
+    my ( $old_prog, @args ) = $cmd =~ /((?:\'[^']+\')|(?:\"[^"]+\")|(?:\S+))/g;
     @ARGV = @args;
     _validate_prog_name( $old_prog, $prog, @args );
     _archive_cmd( $cmd, $repro_file );
