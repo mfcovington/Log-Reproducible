@@ -12,10 +12,15 @@ use File::Path 'make_path';
 use File::Basename;
 use POSIX qw(strftime);
 
-#TODO: Set dir with --reprodir XXX
-#TODO: Add note with --repronote 'XXX'
-#TODO: Add verbose mode
-#TODO: Standalone script that can be used upstream of any command line functions
+# TODO: Set dir with --reprodir XXX
+# TODO: Add note with --repronote 'XXX'
+# TODO: Add verbose mode
+# TODO: Standalone script that can be used upstream of any command line functions
+# TODO: Archive version # and/or current git SHA1, if available
+#         git log -n1 --oneline
+#         git diff
+#         git status ?
+#         -- fatal: Not a git repository (or any of the parent directories): .git
 
 sub reproduce {
     my $dir = shift;
