@@ -13,7 +13,7 @@ use File::Basename;
 use POSIX qw(strftime);
 
 # TODO: Set dir with --reprodir XXX
-# TODO: Add verbose mode
+# TODO: Add verbose (or silent) option
 # TODO: Standalone script that can be used upstream of any command line functions
 # TODO: Archive version # and/or current git SHA1, if available
 #         git log -n1 --oneline
@@ -94,6 +94,7 @@ sub _reproduce_cmd {
 
     my ( $old_prog, @args ) = $cmd =~ /((?:\'[^']+\')|(?:\"[^"]+\")|(?:\S+))/g;
     @ARGV = @args;
+    say STDERR "Reproducing archive: $old_repro_file";
     _validate_prog_name( $old_prog, $prog, @args );
     return $cmd;
 }
@@ -107,6 +108,7 @@ sub _archive_cmd {
         say $repro_fh "#NOTE: $_" for @note_lines;
     }
     close $repro_fh;
+    say STDERR "Created new archive: $repro_file";
 }
 
 sub _validate_prog_name {
