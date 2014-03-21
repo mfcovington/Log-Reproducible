@@ -60,13 +60,7 @@ sub _set_dir {
 }
 
 sub _parse_command {
-    my $note;
-    my $note_idx = first_index { $_ =~ /^-?-repronote$/ } @ARGV;
-    if ( $note_idx > -1 ) {
-        $note = $ARGV[ $note_idx + 1 ];
-        splice @ARGV, $note_idx, 2;
-    }
-
+    my $note = _get_note();
     for (@ARGV) {
         $_ = "'$_'" if /\s/;
     }
@@ -74,6 +68,16 @@ sub _parse_command {
     $prog = basename $prog;
     my $cmd = join " ", $prog, @ARGV;
     return $prog, $cmd, $note;
+}
+
+sub _get_note {
+    my $note;
+    my $note_idx = first_index { $_ =~ /^-?-repronote$/ } @ARGV;
+    if ( $note_idx > -1 ) {
+        $note = $ARGV[ $note_idx + 1 ];
+        splice @ARGV, $note_idx, 2;
+    }
+    return $note;
 }
 
 sub _set_repro_file {
