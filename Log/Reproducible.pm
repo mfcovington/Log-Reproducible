@@ -40,11 +40,9 @@ sub reproduce {
 
     if ( $cmd =~ /\s-?-reproduce\s+(\S+)/ ) {
         my $old_repro_file = $1;
-        _reproduce_cmd( $prog, $old_repro_file, $repro_file );
+        $cmd = _reproduce_cmd( $prog, $old_repro_file, $repro_file );
     }
-    else {
-        _archive_cmd( $cmd, $repro_file, $note );
-    }
+    _archive_cmd( $cmd, $repro_file, $note );
 }
 
 sub _set_dir {
@@ -97,7 +95,7 @@ sub _reproduce_cmd {
     my ( $old_prog, @args ) = $cmd =~ /((?:\'[^']+\')|(?:\"[^"]+\")|(?:\S+))/g;
     @ARGV = @args;
     _validate_prog_name( $old_prog, $prog, @args );
-    _archive_cmd( $cmd, $repro_file );
+    return $cmd;
 }
 
 sub _archive_cmd {
