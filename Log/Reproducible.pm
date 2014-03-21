@@ -31,13 +31,13 @@ sub reproduce {
     make_path $dir;
 
     my ( $prog, $prog_dir, $cmd, $note ) = _parse_command();
-    my $repro_file = _set_repro_file( $dir, $prog );
+    my ( $repro_file, $now ) = _set_repro_file( $dir, $prog );
 
     if ( $cmd =~ /\s-?-reproduce\s+(\S+)/ ) {
         my $old_repro_file = $1;
         $cmd = _reproduce_cmd( $prog, $old_repro_file, $repro_file );
     }
-    _archive_cmd( $cmd, $repro_file, $note, $prog_dir );
+    _archive_cmd( $cmd, $repro_file, $note, $prog_dir, $now );
 }
 
 sub _set_dir {
@@ -78,6 +78,7 @@ sub _set_repro_file {
     my ( $dir, $prog ) = @_;
     my $now = strftime "%Y%m%d.%H%M%S", localtime;
     my $repro_file = "$dir/rlog-$prog-$now";
+    return $repro_file, $now;
 }
 
 sub _reproduce_cmd {
@@ -98,7 +99,7 @@ sub _reproduce_cmd {
 }
 
 sub _archive_cmd {
-    my ( $cmd, $repro_file, $note, $prog_dir ) = @_;
+    my ( $cmd, $repro_file, $note, $prog_dir, $now ) = @_;
     my ( $gitcommit, $gitstatus, $gitdiff ) = _git_info($prog_dir);
     my $cwd = cwd;
     my $full_prog_dir = $prog_dir eq "./" ? $cwd : "$cwd/$prog_dir";
@@ -107,6 +108,7 @@ sub _archive_cmd {
     open my $repro_fh, ">", $repro_file;
     say $repro_fh $cmd;
     _add_archive_comment( "NOTE",      $note,          $repro_fh );
+    _add_archive_comment( "WHEN",      $now,           $repro_fh );
     _add_archive_comment( "WORKDIR",   $cwd,           $repro_fh );
     _add_archive_comment( "SCRIPTDIR", $full_prog_dir, $repro_fh );
     _add_archive_comment( "GITCOMMIT", $gitcommit,     $repro_fh );
