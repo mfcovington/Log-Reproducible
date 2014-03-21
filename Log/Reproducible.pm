@@ -12,7 +12,6 @@ use File::Path 'make_path';
 use File::Basename;
 use POSIX qw(strftime);
 
-# TODO: Set dir with --reprodir XXX
 # TODO: Add verbose (or silent) option
 # TODO: Standalone script that can be used upstream of any command line functions
 
@@ -41,8 +40,13 @@ sub reproduce {
 }
 
 sub _set_dir {
-    my $dir = shift;
-    if ( !defined $dir ) {
+    my $dir     = shift;
+    my $cli_dir = _get_repro_arg("reprodir");
+
+    if ( defined $cli_dir ) {
+        $dir = $cli_dir;
+    }
+    elsif ( !defined $dir ) {
         if ( defined $ENV{REPRO_DIR} ) {
             $dir = $ENV{REPRO_DIR};
         }
@@ -55,7 +59,7 @@ sub _set_dir {
 }
 
 sub _parse_command {
-    my $note = _get_note();
+    my $note = _get_repro_arg("repronote");
     for (@ARGV) {
         $_ = "'$_'" if /\s/;
     }
@@ -64,14 +68,15 @@ sub _parse_command {
     return $prog, $prog_dir, $cmd, $note;
 }
 
-sub _get_note {
-    my $note;
-    my $note_idx = first_index { $_ =~ /^-?-repronote$/ } @ARGV;
-    if ( $note_idx > -1 ) {
-        $note = $ARGV[ $note_idx + 1 ];
-        splice @ARGV, $note_idx, 2;
+sub _get_repro_arg {
+    my $repro_arg = shift;
+    my $arg;
+    my $arg_idx = first_index { $_ =~ /^-?-$repro_arg$/ } @ARGV;
+    if ( $arg_idx > -1 ) {
+        $arg = $ARGV[ $arg_idx + 1 ];
+        splice @ARGV, $arg_idx, 2;
     }
-    return $note;
+    return $arg;
 }
 
 sub _set_repro_file {
