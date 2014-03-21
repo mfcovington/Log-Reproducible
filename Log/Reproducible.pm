@@ -13,7 +13,6 @@ use File::Basename;
 use POSIX qw(strftime);
 
 # TODO: Set dir with --reprodir XXX
-# TODO: Add note with --repronote 'XXX'
 # TODO: Add verbose mode
 # TODO: Standalone script that can be used upstream of any command line functions
 # TODO: Archive version # and/or current git SHA1, if available
@@ -22,12 +21,21 @@ use POSIX qw(strftime);
 #         git status ?
 #         -- fatal: Not a git repository (or any of the parent directories): .git
 
+sub first_index (&@) {    # From List::MoreUtils v0.33
+    my $f = shift;
+    foreach my $i ( 0 .. $#_ ) {
+        local *_ = \$_[$i];
+        return $i if $f->();
+    }
+    return -1;
+}
+
 sub reproduce {
     my $dir = shift;
     $dir = _set_dir($dir);
     make_path $dir;
 
-    my ( $prog, $cmd ) = _parse_command();
+    my ( $prog, $cmd, $note ) = _parse_command();
     my $repro_file = _set_repro_file( $dir, $prog );
 
     if ( $cmd =~ /\s-?-reproduce\s+(\S+)/ ) {
@@ -35,7 +43,7 @@ sub reproduce {
         _reproduce_cmd( $prog, $old_repro_file, $repro_file );
     }
     else {
-        _archive_cmd( $cmd, $repro_file );
+        _archive_cmd( $cmd, $repro_file, $note );
     }
 }
 
@@ -54,13 +62,20 @@ sub _set_dir {
 }
 
 sub _parse_command {
+    my $note;
+    my $note_idx = first_index { $_ =~ /^-?-repronote$/ } @ARGV;
+    if ( $note_idx > -1 ) {
+        $note = $ARGV[ $note_idx + 1 ];
+        splice @ARGV, $note_idx, 2;
+    }
+
     for (@ARGV) {
         $_ = "'$_'" if /\s/;
     }
     my $prog = $0;
     $prog = basename $prog;
     my $cmd = join " ", $prog, @ARGV;
-    return $prog, $cmd;
+    return $prog, $cmd, $note;
 }
 
 sub _set_repro_file {
@@ -86,9 +101,13 @@ sub _reproduce_cmd {
 }
 
 sub _archive_cmd {
-    my ( $cmd, $repro_file ) = @_;
+    my ( $cmd, $repro_file, $note ) = @_;
     open my $repro_fh, ">", $repro_file;
     say $repro_fh $cmd;
+    if ( defined $note ) {
+        my @note_lines = split /\n/, $note;
+        say $repro_fh "#NOTE: $_" for @note_lines;
+    }
     close $repro_fh;
 }
 
