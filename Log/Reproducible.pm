@@ -15,7 +15,7 @@ use POSIX qw(strftime);
 # TODO: Add verbose (or silent) option
 # TODO: Standalone script that can be used upstream of any command line functions
 
-sub first_index (&@) {    # From List::MoreUtils v0.33
+sub _first_index (&@) {    # From List::MoreUtils v0.33
     my $f = shift;
     foreach my $i ( 0 .. $#_ ) {
         local *_ = \$_[$i];
@@ -71,7 +71,7 @@ sub _parse_command {
 sub _get_repro_arg {
     my $repro_arg = shift;
     my $arg;
-    my $arg_idx = first_index { $_ =~ /^-?-$repro_arg$/ } @ARGV;
+    my $arg_idx = _first_index { $_ =~ /^-?-$repro_arg$/ } @ARGV;
     if ( $arg_idx > -1 ) {
         $arg = $ARGV[ $arg_idx + 1 ];
         splice @ARGV, $arg_idx, 2;
