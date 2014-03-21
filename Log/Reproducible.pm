@@ -100,13 +100,18 @@ sub _reproduce_cmd {
 sub _archive_cmd {
     my ( $cmd, $repro_file, $note, $prog_dir ) = @_;
     my ( $gitcommit, $gitstatus, $gitdiff ) = _git_info($prog_dir);
+    my $cwd = cwd;
+    my $full_prog_dir = $prog_dir eq "./" ? $cwd : "$cwd/$prog_dir";
+    $full_prog_dir = "$prog_dir ($full_prog_dir)";
 
     open my $repro_fh, ">", $repro_file;
     say $repro_fh $cmd;
-    _add_archive_comment( "NOTE",      $note,      $repro_fh );
-    _add_archive_comment( "GITCOMMIT", $gitcommit, $repro_fh );
-    _add_archive_comment( "GITSTATUS", $gitstatus, $repro_fh );
-    _add_archive_comment( "GITDIFF",   $gitdiff,   $repro_fh );
+    _add_archive_comment( "NOTE",      $note,          $repro_fh );
+    _add_archive_comment( "WORKDIR",   $cwd,           $repro_fh );
+    _add_archive_comment( "SCRIPTDIR", $full_prog_dir, $repro_fh );
+    _add_archive_comment( "GITCOMMIT", $gitcommit,     $repro_fh );
+    _add_archive_comment( "GITSTATUS", $gitstatus,     $repro_fh );
+    _add_archive_comment( "GITDIFF",   $gitdiff,       $repro_fh );
     close $repro_fh;
     say STDERR "Created new archive: $repro_file";
 }
