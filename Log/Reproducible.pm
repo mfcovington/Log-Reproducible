@@ -105,20 +105,22 @@ sub _reproduce_cmd {
 
 sub _archive_cmd {
     my ( $cmd, $repro_file, $note, $prog_dir, $now ) = @_;
-    my ( $gitcommit, $gitstatus, $gitdiff ) = _git_info($prog_dir);
+    my ( $gitcommit, $gitstatus, $gitdiff_cached, $gitdiff )
+        = _git_info($prog_dir);
     my $cwd = cwd;
     my $full_prog_dir = $prog_dir eq "./" ? $cwd : "$cwd/$prog_dir";
     $full_prog_dir = "$prog_dir ($full_prog_dir)";
 
     open my $repro_fh, ">", $repro_file;
     say $repro_fh $cmd;
-    _add_archive_comment( "NOTE",      $note,          $repro_fh );
-    _add_archive_comment( "WHEN",      $now,           $repro_fh );
-    _add_archive_comment( "WORKDIR",   $cwd,           $repro_fh );
-    _add_archive_comment( "SCRIPTDIR", $full_prog_dir, $repro_fh );
-    _add_archive_comment( "GITCOMMIT", $gitcommit,     $repro_fh );
-    _add_archive_comment( "GITSTATUS", $gitstatus,     $repro_fh );
-    _add_archive_comment( "GITDIFF",   $gitdiff,       $repro_fh );
+    _add_archive_comment( "NOTE",          $note,           $repro_fh );
+    _add_archive_comment( "WHEN",          $now,            $repro_fh );
+    _add_archive_comment( "WORKDIR",       $cwd,            $repro_fh );
+    _add_archive_comment( "SCRIPTDIR",     $full_prog_dir,  $repro_fh );
+    _add_archive_comment( "GITCOMMIT",     $gitcommit,      $repro_fh );
+    _add_archive_comment( "GITSTATUS",     $gitstatus,      $repro_fh );
+    _add_archive_comment( "GITDIFFSTAGED", $gitdiff_cached, $repro_fh );
+    _add_archive_comment( "GITDIFF",       $gitdiff,        $repro_fh );
     close $repro_fh;
     say STDERR "Created new archive: $repro_file";
 }
@@ -131,11 +133,12 @@ sub _git_info {
     return if $gitbranch =~ /fatal: Not a git repository/;
     chomp $gitbranch;
 
-    my $gitlog    = `cd $prog_dir; git log -n1 --oneline;`;
-    my $gitcommit = "$gitbranch $gitlog";
-    my $gitstatus = `cd $prog_dir; git status --short;`;
-    my $gitdiff   = `cd $prog_dir; git diff;`;
-    return $gitcommit, $gitstatus, $gitdiff;
+    my $gitlog         = `cd $prog_dir; git log -n1 --oneline;`;
+    my $gitcommit      = "$gitbranch $gitlog";
+    my $gitstatus      = `cd $prog_dir; git status --short;`;
+    my $gitdiff_cached = `cd $prog_dir; git diff --cached;`;
+    my $gitdiff        = `cd $prog_dir; git diff;`;
+    return $gitcommit, $gitstatus, $gitdiff_cached, $gitdiff;
 }
 
 sub _add_archive_comment {
