@@ -1,4 +1,4 @@
-# Log::Reproducible (0.2.0)
+# Log::Reproducible (0.2.1)
 
 Increase your reproducibility with the Perl module Log::Reproducible. Set it and forget it... *until you need it!*
 
@@ -27,7 +27,9 @@ Also included in the archive are (in order):
 - the directory containing the script
 - git repository info, if applicable (see [Git Repo Info](#git-repo-info), below)
 
-For example, running the script `use-reproducible.pl` would result in an archive file named `rlog-use-reproducible.pl-YYYYMMDD.HHMMSS`. If it was run as `perl bin/use-reproducible.pl -a 1 -b 2 -c 3 OTHER ARGUMENTS`, the contents of the archive file would be:
+For example, running the script `use-reproducible.pl` would result in an archive file named `rlog-use-reproducible.pl-YYYYMMDD.HHMMSS`.
+
+If it was run as `perl bin/use-reproducible.pl -a 1 -b 2 -c 3 OTHER ARGUMENTS`, the contents of the archive file would be:
 
     use-reproducible.pl -a 1 -b 2 -c 3 OTHER ARGUMENTS
     #WHEN: YYYYMMDD.HHMMSS
@@ -72,7 +74,7 @@ For a second
 
 ### Where are the Archives Stored?
 
-When creating or reproducing an archive, a status message gets printed to STDERR indicating where the archive's location. For example:
+When creating or reproducing an archive, a status message gets printed to STDERR indicating the archive's location. For example:
 
     Reproducing archive: /path/to/repro-archive/rlog-use-reproducible.pl-20140321.144307
     Created new archive: /path/to/repro-archive/rlog-use-reproducible.pl-20140321.144335
@@ -101,7 +103,7 @@ This approach overrides the global archive directory settings.
 
 #### Via Command Line
 
-You can override all other archive directory settings by passing the desired directory to the on the command line when you run your script:
+You can override all other archive directory settings by passing the desired directory on the command line when you run your script:
 
 ```sh
 perl use-reproducible.pl --reprodir /path/to/archive
@@ -109,7 +111,7 @@ perl use-reproducible.pl --reprodir /path/to/archive
 
 ### Git Repo Info
 
-*PSA: If you are writing, editing, or even just using Perl scripts and are at all concerned about reproducibility, you should be using [git](http://git-scm.com/) (or another version control system)!*
+*PSA: If you are writing, editing, or even just using Perl scripts and you are at all concerned about reproducibility, __you should be using [git](http://git-scm.com/)__ (or another version control system)!*
 
 If git is installed on your system and your script resides within a git repository, a useful collection of info about the current state of the git repository will be included in the archive:
 
@@ -145,9 +147,11 @@ An example of the git info from an archive:
     #GITDIFF: +An added line
     #GITDIFF:  Another unmodified line
 
-If you are familiar with git, you will be able to figure out that, in addition to a newly added file and an untracked file, there are two previously-committed modified files. One modified file has subsequently been staged (`staged-modified-file`) and the other is unstaged (`unstaged-modified-file`). Both modified files have had `A deleted line` replaced with `An added line`.
+If you are familiar with git, you will be able to figure out that the git repository is on the `develop` branch and the most recent commit (`f483a06`) has the message: "Awesome commit message".
 
-For most purposes, you might not need this information; however, if you need to determine the conditions that existed when you ran a script six months ago, these details could be critical!
+In addition to a newly added file and an untracked file, there are two previously-committed modified files. One modified file has subsequently been staged (`staged-modified-file`) and the other is unstaged (`unstaged-modified-file`). Both modified files have had `A deleted line` replaced with `An added line`.
+
+For most purposes, you might not require all of this information; however, if you need to determine the conditions that existed when you ran a script six months ago, these details could be critical!
 
 ## Future Features
 
