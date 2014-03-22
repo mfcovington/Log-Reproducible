@@ -15,8 +15,8 @@ use POSIX qw(strftime);
 # TODO: Add verbose (or silent) option
 # TODO: Standalone script that can be used upstream of any command line functions
 
-sub _first_index (&@) {    # From List::MoreUtils v0.33
-    my $f = shift;
+sub _first_index (&@) {    # From v0.33 of the wonderful List::MoreUtils
+    my $f = shift;         # https://metacpan.org/pod/List::MoreUtils
     foreach my $i ( 0 .. $#_ ) {
         local *_ = \$_[$i];
         return $i if $f->();
