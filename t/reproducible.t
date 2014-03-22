@@ -23,7 +23,7 @@ my @got;
 my $expected = ["a: 1\n", "b: 'two words'\n", "c: string\n", "extra: some other stuff\n"];
 my $script = "perl use-reproducible.pl";
 
-@got = `$script -a 1 -b 'two words' -c string some other stuff`;
+@got = `$script -a 1 -b 'two words' -c string some other stuff 2> /dev/null`;
 is_deeply( \@got, $expected, 'Run and archive Perl script' );
 
 sleep 1;
@@ -31,7 +31,7 @@ sleep 1;
 my $archive_dir = "repro-archive";
 my $archive = get_recent_archive($archive_dir);
 
-@got = `$script --reproduce $archive_dir/$archive`;
+@got = `$script --reproduce $archive_dir/$archive 2> /dev/null`;
 is_deeply( \@got, $expected, 'Run an archived Perl script' );
 
 subtest '_set_dir tests' => sub {
