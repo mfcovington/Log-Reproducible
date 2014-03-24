@@ -27,11 +27,11 @@ Also included in the archive are (in order):
 - the directory containing the script
 - git repository info, if applicable (see [Git Repo Info](#git-repo-info), below)
 
-For example, running the script `use-reproducible.pl` would result in an archive file named `rlog-use-reproducible.pl-YYYYMMDD.HHMMSS`.
+For example, running the script `sample.pl` would result in an archive file named `rlog-sample.pl-YYYYMMDD.HHMMSS`.
 
-If it was run as `perl bin/use-reproducible.pl -a 1 -b 2 -c 3 OTHER ARGUMENTS`, the contents of the archive file would be:
+If it was run as `perl bin/sample.pl -a 1 -b 2 -c 3 OTHER ARGUMENTS`, the contents of the archive file would be:
 
-    use-reproducible.pl -a 1 -b 2 -c 3 OTHER ARGUMENTS
+    sample.pl -a 1 -b 2 -c 3 OTHER ARGUMENTS
     #WHEN: YYYYMMDD.HHMMSS
     #WORKDIR: /path/to/working/dir
     #SCRIPTDIR: bin (/path/to/working/dir/bin)
@@ -44,7 +44,7 @@ If it was run as `perl bin/use-reproducible.pl -a 1 -b 2 -c 3 OTHER ARGUMENTS`, 
 To reproduce an archived run, all you need to do is run the script followed by `--reproduce` and the path to the archive file. For example:
 
 ```sh
-perl use-reproducible.pl --reproduce rlog-use-reproducible.pl-YYYYMMDD.HHMMSS
+perl sample.pl --reproduce rlog-sample.pl-YYYYMMDD.HHMMSS
 ```
 
 This results in:
@@ -57,7 +57,7 @@ This results in:
 Notes can be added to an archive using `--repronote`:
 
 ```sh
-perl use-reproducible.pl --repronote 'This is a note'
+perl sample.pl --repronote 'This is a note'
 ```
 
 If the note contains spaces, it must be surrounded by quotes.
@@ -65,7 +65,7 @@ If the note contains spaces, it must be surrounded by quotes.
 Notes can span multiple lines:
 
 ```sh
-perl use-reproducible.pl --repronote "This is a multi-line note:
+perl sample.pl --repronote "This is a multi-line note:
 The moon had
 a cat's mustache
 For a second
@@ -76,8 +76,8 @@ For a second
 
 When creating or reproducing an archive, a status message gets printed to STDERR indicating the archive's location. For example:
 
-    Reproducing archive: /path/to/repro-archive/rlog-use-reproducible.pl-20140321.144307
-    Created new archive: /path/to/repro-archive/rlog-use-reproducible.pl-20140321.144335
+    Reproducing archive: /path/to/repro-archive/rlog-sample.pl-20140321.144307
+    Created new archive: /path/to/repro-archive/rlog-sample.pl-20140321.144335
 
 #### Default
 
@@ -106,7 +106,7 @@ This approach overrides the global archive directory settings.
 You can override all other archive directory settings by passing the desired directory on the command line when you run your script:
 
 ```sh
-perl use-reproducible.pl --reprodir /path/to/archive
+perl sample.pl --reprodir /path/to/archive
 ```
 
 ### Git Repo Info
