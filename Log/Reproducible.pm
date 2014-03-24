@@ -10,6 +10,7 @@ use POSIX qw(strftime);
 
 # TODO: Add verbose (or silent) option
 # TODO: Standalone script that can be used upstream of any command line functions
+# TODO: Allow customizion of --repronote/--reprodir/--reproduce upon import (to avoid conflicts or just shorten)
 
 sub import {
     my ( $pkg, $dir ) = @_;
