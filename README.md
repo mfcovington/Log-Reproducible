@@ -2,6 +2,8 @@
 
 Increase your reproducibility with the Perl module Log::Reproducible. Set it and forget it... *until you need it!*
 
+In science (and probably any other analytical field), reproducibility is critical. If an analysis cannot be faithfully reproduced, it was arguably a waste of time. Log::Reproducible provides effortless record keeping of the conditions under which scripts are run and allows easily replication of those conditions.
+
 ## Usage
 
 ### Creating Archives
