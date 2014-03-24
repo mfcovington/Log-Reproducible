@@ -1,8 +1,4 @@
-# Mike Covington
-# created: 2014-03-05
-#
-# Description:
-#
+package Log::Reproducible;
 use strict;
 use warnings;
 use autodie;
@@ -14,6 +10,11 @@ use POSIX qw(strftime);
 
 # TODO: Add verbose (or silent) option
 # TODO: Standalone script that can be used upstream of any command line functions
+
+sub import {
+    my ( $pkg, $dir ) = @_;
+    reproduce($dir);
+}
 
 sub _first_index (&@) {    # From v0.33 of the wonderful List::MoreUtils
     my $f = shift;         # https://metacpan.org/pod/List::MoreUtils
