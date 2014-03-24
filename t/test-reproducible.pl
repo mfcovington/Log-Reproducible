@@ -12,7 +12,6 @@ use Getopt::Long;
 use FindBin qw($Bin);
 use lib "$Bin/../";
 use Log::Reproducible;
-reproduce();
 
 # default values
 my $a = 0;
