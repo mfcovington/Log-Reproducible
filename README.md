@@ -8,7 +8,7 @@ In science (and probably any other analytical field), reproducibility is critica
 
 ### Creating Archives
 
-Just a single line near the top of your Perl script before accessing `@ARGV`, calling a module that manipulates `@ARGV`, or processing command line options with a module like [Getopt::Long](http://perldoc.perl.org/Getopt/Long.html):
+Just add a single line near the top of your Perl script before accessing `@ARGV`, calling a module that manipulates `@ARGV`, or processing command line options with a module like [Getopt::Long](http://perldoc.perl.org/Getopt/Long.html):
 
 ```perl
 use Log::Reproducible;
