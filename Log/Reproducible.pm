@@ -109,6 +109,7 @@ sub _archive_cmd {
     my ( $cmd, $repro_file, $note, $prog_dir, $now ) = @_;
     my ( $gitcommit, $gitstatus, $gitdiff_cached, $gitdiff )
         = _git_info($prog_dir);
+    my ( $perl_path, $perl_version, $perl_inc ) = _perl_info();
     my $cwd = cwd;
     my $full_prog_dir = $prog_dir eq "./" ? $cwd : "$cwd/$prog_dir";
     $full_prog_dir = "$prog_dir ($full_prog_dir)";
@@ -119,6 +120,9 @@ sub _archive_cmd {
     _add_archive_comment( "WHEN",          $now,            $repro_fh );
     _add_archive_comment( "WORKDIR",       $cwd,            $repro_fh );
     _add_archive_comment( "SCRIPTDIR",     $full_prog_dir,  $repro_fh );
+    _add_archive_comment( "PERLVERSION",   $perl_version,   $repro_fh );
+    _add_archive_comment( "PERLPATH",      $perl_path,      $repro_fh );
+    _add_archive_comment( "PERLINC",       $perl_inc,       $repro_fh );
     _add_archive_comment( "GITCOMMIT",     $gitcommit,      $repro_fh );
     _add_archive_comment( "GITSTATUS",     $gitstatus,      $repro_fh );
     _add_archive_comment( "GITDIFFSTAGED", $gitdiff_cached, $repro_fh );
@@ -141,6 +145,13 @@ sub _git_info {
     my $gitdiff_cached = `cd $prog_dir; git diff --cached;`;
     my $gitdiff        = `cd $prog_dir; git diff;`;
     return $gitcommit, $gitstatus, $gitdiff_cached, $gitdiff;
+}
+
+sub _perl_info {
+    my $perl_path    = $^X;
+    my $perl_version = $^V;
+    my $perl_inc     = join ":", @INC;
+    return $perl_path, $perl_version, $perl_inc;
 }
 
 sub _add_archive_comment {
