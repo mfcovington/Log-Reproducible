@@ -11,6 +11,7 @@ use feature 'say';
 use Test::More tests => 4;
 use FindBin qw($Bin);
 use lib "$Bin/../";
+use Cwd;
 
 #TODO: Account for systems with REPRO_DIR environmental variable set
 
@@ -21,17 +22,18 @@ BEGIN {
 
 my @got;
 my $expected = ["a: 1\n", "b: 'two words'\n", "c: string\n", "extra: some other stuff\n"];
-my $script = "perl use-reproducible.pl";
+my $script = "test-reproducible.pl";
+my $cmd = "perl $Bin/$script";
 
-@got = `$script -a 1 -b 'two words' -c string some other stuff 2> /dev/null`;
+@got = `$cmd -a 1 -b 'two words' -c string some other stuff 2> /dev/null`;
 is_deeply( \@got, $expected, 'Run and archive Perl script' );
 
 sleep 1;
 
-my $archive_dir = "repro-archive";
+my $archive_dir = "$Bin/repro-archive";
 my $archive = get_recent_archive($archive_dir);
 
-@got = `$script --reproduce $archive_dir/$archive 2> /dev/null`;
+@got = `$cmd --reproduce $archive_dir/$archive 2> /dev/null`;
 is_deeply( \@got, $expected, 'Run an archived Perl script' );
 
 subtest '_set_dir tests' => sub {
@@ -41,14 +43,14 @@ subtest '_set_dir tests' => sub {
     undef $ENV{REPRO_DIR};
 
     my $cwd = getcwd;
-    is( _set_dir(), "$cwd/repro-archive", "default _set_dir()");
+    is( Log::Reproducible::_set_dir(), "$cwd/repro-archive", "default _set_dir()");
 
     my $env_dir = "env-dir";
     $ENV{REPRO_DIR} = $env_dir;
-    is( _set_dir(), $env_dir, "_set_dir() using REPRO_DIR environmental variable ('$env_dir')");
+    is( Log::Reproducible::_set_dir(), $env_dir, "_set_dir() using REPRO_DIR environmental variable ('$env_dir')");
 
     my $custom_dir = "custom-dir";
-    is( _set_dir($custom_dir), $custom_dir, "_set_dir('$custom_dir')");
+    is( Log::Reproducible::_set_dir($custom_dir), $custom_dir, "_set_dir('$custom_dir')");
 
     $ENV{REPRO_DIR} = $original_REPRO_DIR;
 };
@@ -56,7 +58,7 @@ subtest '_set_dir tests' => sub {
 sub get_recent_archive {
     my $archive_dir = shift;
     opendir (my $dh, $archive_dir);
-    my @archives = grep { /^rlog-/ && -f "$archive_dir/$_" } readdir($dh);
+    my @archives = grep { /^rlog-$script/ && -f "$archive_dir/$_" } readdir($dh);
     closedir $dh;
     return pop @archives;
 }

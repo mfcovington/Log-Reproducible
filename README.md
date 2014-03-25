@@ -8,11 +8,10 @@ In science (and probably any other analytical field), reproducibility is critica
 
 ### Creating Archives
 
-Just add these two lines near the top of your Perl script before accessing `@ARGV` or processing command line options with a module like [Getopt::Long](http://perldoc.perl.org/Getopt/Long.html):
+Just add a single line near the top of your Perl script before accessing `@ARGV`, calling a module that manipulates `@ARGV`, or processing command line options with a module like [Getopt::Long](http://perldoc.perl.org/Getopt/Long.html):
 
 ```perl
 use Log::Reproducible;
-reproduce();
 ```
 
 That's all!
@@ -39,9 +38,6 @@ If it was run as `perl bin/sample.pl -a 1 -b 2 -c 3 OTHER ARGUMENTS`, the conten
     #SCRIPTDIR: bin (/path/to/working/dir/bin)
 
 ### Reproducing an Archived Analysis
-
-<!-- In order to reproduce an archived run, you can look at the archive contents and re-run the contents; however, that is a waste of time (and has the potential for typos or copy/paste errors).
- -->
 
 To reproduce an archived run, all you need to do is run the script followed by `--reproduce` and the path to the archive file. For example:
 
@@ -95,10 +91,10 @@ export REPRO_DIR=/path/to/archive
 
 #### Script
 
-You can set a script-level archive directory by passing the desired directory to the `reproduce()` function in your script:
+You can set a script-level archive directory by passing the desired directory when importing the `Log::Reproducible` module:
 
 ```perl
-reproduce("/path/to/archive");
+use Log::Reproducible '/path/to/archive';
 ```
 
 This approach overrides the global archive directory settings.
