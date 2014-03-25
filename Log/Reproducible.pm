@@ -103,6 +103,8 @@ sub _reproduce_cmd {
     @ARGV = @args;
     say STDERR "Reproducing archive: $old_repro_file";
     _validate_prog_name( $old_prog, $prog, @args );
+    _validate_perl_info();
+    _validate_git_info();
     return $cmd;
 }
 
@@ -172,6 +174,14 @@ If this was expected (e.g., filename was changed), please re-run as:
     perl $prog @args
 
 EOF
+}
+
+sub _validate_perl_info {
+    # body...
+}
+
+sub _validate_git_info {
+    # body...
 }
 
 1;
