@@ -1,16 +1,17 @@
-# Log::Reproducible (0.2.1)
+# Log::Reproducible (0.3.0)
 
 Increase your reproducibility with the Perl module Log::Reproducible. Set it and forget it... *until you need it!*
+
+In science (and probably any other analytical field), reproducibility is critical. If an analysis cannot be faithfully reproduced, it was arguably a waste of time. Log::Reproducible provides effortless record keeping of the conditions under which scripts are run and allows easily replication of those conditions.
 
 ## Usage
 
 ### Creating Archives
 
-Just add these two lines near the top of your Perl script before accessing `@ARGV` or processing command line options with a module like [Getopt::Long](http://perldoc.perl.org/Getopt/Long.html):
+Just add a single line near the top of your Perl script before accessing `@ARGV`, calling a module that manipulates `@ARGV`, or processing command line options with a module like [Getopt::Long](http://perldoc.perl.org/Getopt/Long.html):
 
 ```perl
 use Log::Reproducible;
-reproduce();
 ```
 
 That's all!
@@ -27,24 +28,21 @@ Also included in the archive are (in order):
 - the directory containing the script
 - git repository info, if applicable (see [Git Repo Info](#git-repo-info), below)
 
-For example, running the script `use-reproducible.pl` would result in an archive file named `rlog-use-reproducible.pl-YYYYMMDD.HHMMSS`.
+For example, running the script `sample.pl` would result in an archive file named `rlog-sample.pl-YYYYMMDD.HHMMSS`.
 
-If it was run as `perl bin/use-reproducible.pl -a 1 -b 2 -c 3 OTHER ARGUMENTS`, the contents of the archive file would be:
+If it was run as `perl bin/sample.pl -a 1 -b 2 -c 3 OTHER ARGUMENTS`, the contents of the archive file would be:
 
-    use-reproducible.pl -a 1 -b 2 -c 3 OTHER ARGUMENTS
+    sample.pl -a 1 -b 2 -c 3 OTHER ARGUMENTS
     #WHEN: YYYYMMDD.HHMMSS
     #WORKDIR: /path/to/working/dir
     #SCRIPTDIR: bin (/path/to/working/dir/bin)
 
 ### Reproducing an Archived Analysis
 
-<!-- In order to reproduce an archived run, you can look at the archive contents and re-run the contents; however, that is a waste of time (and has the potential for typos or copy/paste errors).
- -->
-
 To reproduce an archived run, all you need to do is run the script followed by `--reproduce` and the path to the archive file. For example:
 
 ```sh
-perl use-reproducible.pl --reproduce rlog-use-reproducible.pl-YYYYMMDD.HHMMSS
+perl sample.pl --reproduce rlog-sample.pl-YYYYMMDD.HHMMSS
 ```
 
 This results in:
@@ -57,7 +55,7 @@ This results in:
 Notes can be added to an archive using `--repronote`:
 
 ```sh
-perl use-reproducible.pl --repronote 'This is a note'
+perl sample.pl --repronote 'This is a note'
 ```
 
 If the note contains spaces, it must be surrounded by quotes.
@@ -65,7 +63,7 @@ If the note contains spaces, it must be surrounded by quotes.
 Notes can span multiple lines:
 
 ```sh
-perl use-reproducible.pl --repronote "This is a multi-line note:
+perl sample.pl --repronote "This is a multi-line note:
 The moon had
 a cat's mustache
 For a second
@@ -76,8 +74,8 @@ For a second
 
 When creating or reproducing an archive, a status message gets printed to STDERR indicating the archive's location. For example:
 
-    Reproducing archive: /path/to/repro-archive/rlog-use-reproducible.pl-20140321.144307
-    Created new archive: /path/to/repro-archive/rlog-use-reproducible.pl-20140321.144335
+    Reproducing archive: /path/to/repro-archive/rlog-sample.pl-20140321.144307
+    Created new archive: /path/to/repro-archive/rlog-sample.pl-20140321.144335
 
 #### Default
 
@@ -93,10 +91,10 @@ export REPRO_DIR=/path/to/archive
 
 #### Script
 
-You can set a script-level archive directory by passing the desired directory to the `reproduce()` function in your script:
+You can set a script-level archive directory by passing the desired directory when importing the `Log::Reproducible` module:
 
 ```perl
-reproduce("/path/to/archive");
+use Log::Reproducible '/path/to/archive';
 ```
 
 This approach overrides the global archive directory settings.
@@ -106,7 +104,7 @@ This approach overrides the global archive directory settings.
 You can override all other archive directory settings by passing the desired directory on the command line when you run your script:
 
 ```sh
-perl use-reproducible.pl --reprodir /path/to/archive
+perl sample.pl --reprodir /path/to/archive
 ```
 
 ### Git Repo Info
