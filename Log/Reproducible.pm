@@ -7,6 +7,7 @@ use Cwd;
 use File::Path 'make_path';
 use File::Basename;
 use POSIX qw(strftime);
+use Config;
 
 # TODO: Add verbose (or silent) option
 # TODO: Standalone script that can be used upstream of any command line functions
@@ -148,7 +149,7 @@ sub _git_info {
 }
 
 sub _perl_info {
-    my $perl_path    = $^X;
+    my $perl_path    = $Config{perlpath};
     my $perl_version = $^V;
     my $perl_inc     = join ":", @INC;
     return $perl_path, $perl_version, $perl_inc;
