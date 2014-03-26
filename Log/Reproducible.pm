@@ -7,6 +7,7 @@ use Cwd;
 use File::Path 'make_path';
 use File::Basename;
 use POSIX qw(strftime);
+use Config;
 
 # TODO: Add verbose (or silent) option
 # TODO: Standalone script that can be used upstream of any command line functions
@@ -36,7 +37,8 @@ sub reproduce {
 
     if ( $cmd =~ /\s-?-reproduce\s+(\S+)/ ) {
         my $old_repro_file = $1;
-        $cmd = _reproduce_cmd( $prog, $old_repro_file, $repro_file );
+        $cmd = _reproduce_cmd( $prog, $prog_dir, $old_repro_file,
+            $repro_file );
     }
     _archive_cmd( $cmd, $repro_file, $note, $prog_dir, $now );
 }
@@ -89,19 +91,22 @@ sub _set_repro_file {
 }
 
 sub _reproduce_cmd {
-    my ( $prog, $old_repro_file, $repro_file ) = @_;
+    my ( $prog, $prog_dir, $old_repro_file, $repro_file ) = @_;
 
     die "Reproducible archive file ($old_repro_file) does not exists.\n"
         unless -e $old_repro_file;
     open my $old_repro_fh, "<", $old_repro_file;
-    my $cmd = <$old_repro_fh>;
+    my @archive = <$old_repro_fh>;
+    chomp @archive;
     close $old_repro_fh;
-    chomp $cmd;
 
+    my $cmd = $archive[0];
     my ( $old_prog, @args ) = $cmd =~ /((?:\'[^']+\')|(?:\"[^"]+\")|(?:\S+))/g;
     @ARGV = @args;
     say STDERR "Reproducing archive: $old_repro_file";
     _validate_prog_name( $old_prog, $prog, @args );
+    _validate_perl_info( \@archive );
+    _validate_git_info( \@archive, $prog_dir );
     return $cmd;
 }
 
@@ -109,6 +114,7 @@ sub _archive_cmd {
     my ( $cmd, $repro_file, $note, $prog_dir, $now ) = @_;
     my ( $gitcommit, $gitstatus, $gitdiff_cached, $gitdiff )
         = _git_info($prog_dir);
+    my ( $perl_path, $perl_version, $perl_inc ) = _perl_info();
     my $cwd = cwd;
     my $full_prog_dir = $prog_dir eq "./" ? $cwd : "$cwd/$prog_dir";
     $full_prog_dir = "$prog_dir ($full_prog_dir)";
@@ -119,6 +125,9 @@ sub _archive_cmd {
     _add_archive_comment( "WHEN",          $now,            $repro_fh );
     _add_archive_comment( "WORKDIR",       $cwd,            $repro_fh );
     _add_archive_comment( "SCRIPTDIR",     $full_prog_dir,  $repro_fh );
+    _add_archive_comment( "PERLVERSION",   $perl_version,   $repro_fh );
+    _add_archive_comment( "PERLPATH",      $perl_path,      $repro_fh );
+    _add_archive_comment( "PERLINC",       $perl_inc,       $repro_fh );
     _add_archive_comment( "GITCOMMIT",     $gitcommit,      $repro_fh );
     _add_archive_comment( "GITSTATUS",     $gitstatus,      $repro_fh );
     _add_archive_comment( "GITDIFFSTAGED", $gitdiff_cached, $repro_fh );
@@ -143,6 +152,13 @@ sub _git_info {
     return $gitcommit, $gitstatus, $gitdiff_cached, $gitdiff;
 }
 
+sub _perl_info {
+    my $perl_path    = $Config{perlpath};
+    my $perl_version = $^V;
+    my $perl_inc     = join ":", @INC;
+    return $perl_path, $perl_version, $perl_inc;
+}
+
 sub _add_archive_comment {
     my ( $title, $comment, $repro_fh ) = @_;
     if ( defined $comment ) {
@@ -160,6 +176,62 @@ If this was expected (e.g., filename was changed), please re-run as:
     perl $prog @args
 
 EOF
+}
+
+sub _validate_perl_info {
+    my $archive_lines = shift;
+
+    my ($archive_perl_path)
+        = _extract_from_archive( $archive_lines, "PERLPATH" );
+    my ($archive_perl_version)
+        = _extract_from_archive( $archive_lines, "PERLVERSION" );
+    my ($archive_perl_inc)
+        = _extract_from_archive( $archive_lines, "PERLINC" );
+
+    my ( $perl_path, $perl_version, $perl_inc ) = _perl_info();
+
+    _compare( $archive_perl_path,    $perl_path,    "PERLPATH" );
+    _compare( $archive_perl_version, $perl_version, "PERLVERSION" );
+    _compare( $archive_perl_inc,     $perl_inc,     "PERLINC" );
+}
+
+sub _validate_git_info {
+    my ( $archive_lines, $prog_dir ) = @_;
+
+    my ($archive_gitcommit)
+        = _extract_from_archive( $archive_lines, "GITCOMMIT" );
+    my ($archive_gitstatus)
+        = _extract_from_archive( $archive_lines, "GITSTATUS" );
+    my ($archive_gitdiff_cached)
+        = _extract_from_archive( $archive_lines, "GITDIFFSTAGED" );
+    my ($archive_gitdiff)
+        = _extract_from_archive( $archive_lines, "GITDIFF" );
+
+    my ( $gitcommit, $gitstatus, $gitdiff_cached, $gitdiff )
+        = _git_info($prog_dir);
+
+    _compare( $archive_gitcommit,      $gitcommit,      "GITCOMMIT" );
+    _compare( $archive_gitstatus,      $gitstatus,      "GITSTATUS" );
+    _compare( $archive_gitdiff_cached, $gitdiff_cached, "GITDIFFSTAGED" );
+    _compare( $archive_gitdiff,        $gitdiff,        "GITDIFF" );
+}
+
+sub _extract_from_archive {
+    my ( $archive_lines, $key ) = @_;
+
+    my @values = grep { /#$key: / } @$archive_lines;
+    $_ =~ s/#$key: // for @values;
+
+    return join "\n", @values;
+}
+
+sub _compare {
+    my ( $old, $new, $key ) = @_;
+    chomp $new;
+    chomp $old;
+
+    say STDERR "WARNING: Archived and current $key do NOT match"
+        if $old ne $new;
 }
 
 1;
