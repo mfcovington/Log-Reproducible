@@ -1,4 +1,4 @@
-# Log::Reproducible (0.4.0)
+# Log::Reproducible (0.4.1)
 
 Increase your reproducibility with the Perl module Log::Reproducible. Set it and forget it... *until you need it!*
 
@@ -26,6 +26,7 @@ Also included in the archive are (in order):
 - the date/time
 - the working directory
 - the directory containing the script
+- Perl-related info (version, path to perl, and `@INC`)
 - git repository info, if applicable (see [Git Repo Info](#git-repo-info), below)
 
 For example, running the script `sample.pl` would result in an archive file named `rlog-sample.pl-YYYYMMDD.HHMMSS`.
@@ -36,6 +37,9 @@ If it was run as `perl bin/sample.pl -a 1 -b 2 -c 3 OTHER ARGUMENTS`, the conten
     #WHEN: YYYYMMDD.HHMMSS
     #WORKDIR: /path/to/working/dir
     #SCRIPTDIR: bin (/path/to/working/dir/bin)
+    #PERLVERSION: v5.18.2
+    #PERLPATH: /path/to/bin/perl
+    #PERLINC: /path/to/perl/lib:/path/to/another/perl/lib:.
 
 ### Reproducing an Archived Analysis
 
@@ -49,6 +53,8 @@ This results in:
 
 1. The script being executed with the command line options and arguments used in the original archived run
 2. The creation of a new archive file identical to the older one (except with an updated date/time in the archive filename)
+
+When reproducing an archived analysis, warnings will be issued if the current Perl- or git-related info fails to match that of the archive. Such inconsistencies are potential indicators that an archived analysis will not be reproduced in a faithful manner. Similarly, a reproduced analysis will fail if the current script name does not match the archived script name.
 
 ### Adding Archive Notes
 
