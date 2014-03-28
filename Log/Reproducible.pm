@@ -34,14 +34,16 @@ sub reproduce {
 
     my ( $prog, $prog_dir, $cmd, $note ) = _parse_command();
     my ( $repro_file, $now ) = _set_repro_file( $dir, $prog );
+    my $old_repro_file;
 
     my $warnings = [];
     if ( $cmd =~ /\s-?-reproduce\s+(\S+)/ ) {
-        my $old_repro_file = $1;
+        $old_repro_file = $1;
         $cmd = _reproduce_cmd( $prog, $prog_dir, $old_repro_file, $repro_file,
             $warnings );
     }
-    _archive_cmd( $cmd, $repro_file, $note, $prog_dir, $now, $warnings );
+    _archive_cmd( $cmd, $old_repro_file, $repro_file, $note, $prog_dir, $now,
+        $warnings );
 }
 
 sub _set_dir {
@@ -114,7 +116,9 @@ sub _reproduce_cmd {
 }
 
 sub _archive_cmd {
-    my ( $cmd, $repro_file, $note, $prog_dir, $now, $warnings ) = @_;
+    my ( $cmd, $old_repro_file, $repro_file, $note, $prog_dir, $now,
+        $warnings )
+        = @_;
     my $error_summary = join "\n", @$warnings;
     my ( $gitcommit, $gitstatus, $gitdiff_cached, $gitdiff )
         = _git_info($prog_dir);
@@ -126,6 +130,7 @@ sub _archive_cmd {
     open my $repro_fh, ">", $repro_file;
     say $repro_fh $cmd;
     _add_archive_comment( "NOTE",          $note,           $repro_fh );
+    _add_archive_comment( "REPRODUCED",    $old_repro_file, $repro_fh );
     _add_archive_comment( "REPROWARNING",  $error_summary,  $repro_fh );
     _add_archive_comment( "WHEN",          $now,            $repro_fh );
     _add_archive_comment( "WORKDIR",       $cwd,            $repro_fh );
