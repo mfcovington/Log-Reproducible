@@ -1,8 +1,16 @@
-# Log::Reproducible (0.4.1)
+# Log::Reproducible (0.5.0)
 
-Increase your reproducibility with the Perl module Log::Reproducible. Set it and forget it... *until you need it!*
+**TAGLINE:** Increase your reproducibility with the Perl module Log::Reproducible. Set it and forget it... *until you need it!*
 
-In science (and probably any other analytical field), reproducibility is critical. If an analysis cannot be faithfully reproduced, it was arguably a waste of time. Log::Reproducible provides effortless record keeping of the conditions under which scripts are run and allows easily replication of those conditions.
+**MOTIVATION:** In science (and probably any other analytical field), reproducibility is critical. If an analysis cannot be faithfully reproduced, it was arguably a waste of time.
+
+How does Log::Reproducible increase reproducibility?
+
+- Provides effortless [record keeping](#creating-archives) of the conditions under which scripts are run
+- Allows [easy replication](#reproducing-an-archived-analysis) of these conditions
+- Detects and [reports inconsistencies](#inconsistencies-between-current-and-archived-conditions) between archived and replicated conditions, including differences in:
+    - Perl setup
+    - State of the Git repository (if the script is under Git version control)
 
 ## Usage
 
@@ -27,7 +35,7 @@ Also included in the archive are (in order):
 - the working directory
 - the directory containing the script
 - Perl-related info (version, path to perl, and `@INC`)
-- git repository info, if applicable (see [Git Repo Info](#git-repo-info), below)
+- Git repository info, if applicable (see [Git Repo Info](#git-repo-info), below)
 
 For example, running the script `sample.pl` would result in an archive file named `rlog-sample.pl-YYYYMMDD.HHMMSS`.
 
@@ -52,9 +60,17 @@ perl sample.pl --reproduce rlog-sample.pl-YYYYMMDD.HHMMSS
 This results in:
 
 1. The script being executed with the command line options and arguments used in the original archived run
-2. The creation of a new archive file identical to the older one (except with an updated date/time in the archive filename)
+2. The creation of a new archive file identical to the older one, except with:
+    - an updated date and time
+    - the addition of /path/to/the/old/archive
 
-When reproducing an archived analysis, warnings will be issued if the current Perl- or git-related info fails to match that of the archive. Such inconsistencies are potential indicators that an archived analysis will not be reproduced in a faithful manner. Similarly, a reproduced analysis will fail if the current script name does not match the archived script name.
+#### Inconsistencies between current and archived conditions
+
+When reproducing an archived analysis, warnings will be issued if the current Perl- or Git-related info fails to match that of the archive. Such inconsistencies are potential indicators that an archived analysis will not be reproduced in a faithful manner.
+
+After the warnings have been displayed, there is a prompt for whether to continue reproducing the archived analysis. If the user chooses to continue, all warnings will be logged in the new archive.
+
+If the current script name does not match the archived script name, the reproduced analysis will immediately fail (with instructions on how to proceed).
 
 ### Adding Archive Notes
 
@@ -117,7 +133,7 @@ perl sample.pl --reprodir /path/to/archive
 
 *PSA: If you are writing, editing, or even just using Perl scripts and you are at all concerned about reproducibility, __you should be using [git](http://git-scm.com/)__ (or another version control system)!*
 
-If git is installed on your system and your script resides within a git repository, a useful collection of info about the current state of the git repository will be included in the archive:
+If git is installed on your system and your script resides within a Git repository, a useful collection of info about the current state of the Git repository will be included in the archive:
 
 - Current branch
 - Truncated SHA1 hash of most recent commit 
@@ -125,7 +141,7 @@ If git is installed on your system and your script resides within a git reposito
 - List of modified, added, removed, and unstaged files
 - A summary of changes to previously committed files (both staged and unstaged)
 
-An example of the git info from an archive:
+An example of the Git info from an archive:
 
     #GITCOMMIT: develop f483a06 Awesome commit message
     #GITSTATUS: M  staged-modified-file
@@ -151,7 +167,7 @@ An example of the git info from an archive:
     #GITDIFF: +An added line
     #GITDIFF:  Another unmodified line
 
-If you are familiar with git, you will be able to figure out that the git repository is on the `develop` branch and the most recent commit (`f483a06`) has the message: "Awesome commit message".
+If you are familiar with Git, you will be able to figure out that the Git repository is on the `develop` branch and the most recent commit (`f483a06`) has the message: "Awesome commit message".
 
 In addition to a newly added file and an untracked file, there are two previously-committed modified files. One modified file has subsequently been staged (`staged-modified-file`) and the other is unstaged (`unstaged-modified-file`). Both modified files have had `A deleted line` replaced with `An added line`.
 

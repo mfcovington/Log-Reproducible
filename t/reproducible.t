@@ -13,7 +13,8 @@ use FindBin qw($Bin);
 use lib "$Bin/../";
 use Cwd;
 
-#TODO: Account for systems with REPRO_DIR environmental variable set
+# TODO: Account for systems with REPRO_DIR environmental variable set
+# TODO: Need to update tests to account for new features
 
 BEGIN {
     require_ok('Log::Reproducible')
