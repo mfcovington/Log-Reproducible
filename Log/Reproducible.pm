@@ -35,12 +35,13 @@ sub reproduce {
     my ( $prog, $prog_dir, $cmd, $note ) = _parse_command();
     my ( $repro_file, $now ) = _set_repro_file( $dir, $prog );
 
+    my $warnings = [];
     if ( $cmd =~ /\s-?-reproduce\s+(\S+)/ ) {
         my $old_repro_file = $1;
-        $cmd = _reproduce_cmd( $prog, $prog_dir, $old_repro_file,
-            $repro_file );
+        $cmd = _reproduce_cmd( $prog, $prog_dir, $old_repro_file, $repro_file,
+            $warnings );
     }
-    _archive_cmd( $cmd, $repro_file, $note, $prog_dir, $now );
+    _archive_cmd( $cmd, $repro_file, $note, $prog_dir, $now, $warnings );
 }
 
 sub _set_dir {
@@ -91,7 +92,7 @@ sub _set_repro_file {
 }
 
 sub _reproduce_cmd {
-    my ( $prog, $prog_dir, $old_repro_file, $repro_file ) = @_;
+    my ( $prog, $prog_dir, $old_repro_file, $repro_file, $warnings ) = @_;
 
     die "Reproducible archive file ($old_repro_file) does not exists.\n"
         unless -e $old_repro_file;
@@ -105,17 +106,16 @@ sub _reproduce_cmd {
         = $cmd =~ /((?:\'[^']+\')|(?:\"[^"]+\")|(?:\S+))/g;
     @ARGV = @args;
     say STDERR "Reproducing archive: $old_repro_file";
-    my $error = 0;
     _validate_prog_name( $archived_prog, $prog, @args );
-    _validate_perl_info( \@archive, \$error );
-    _validate_git_info( \@archive, $prog_dir, \$error );
-    _do_or_die() if $error;
+    _validate_perl_info( \@archive, $warnings );
+    _validate_git_info( \@archive, $prog_dir, $warnings );
+    _do_or_die() if scalar @$warnings > 0;
     return $cmd;
-
 }
 
 sub _archive_cmd {
-    my ( $cmd, $repro_file, $note, $prog_dir, $now ) = @_;
+    my ( $cmd, $repro_file, $note, $prog_dir, $now, $warnings ) = @_;
+    my $error_summary = join "\n", @$warnings;
     my ( $gitcommit, $gitstatus, $gitdiff_cached, $gitdiff )
         = _git_info($prog_dir);
     my ( $perl_path, $perl_version, $perl_inc ) = _perl_info();
@@ -126,6 +126,7 @@ sub _archive_cmd {
     open my $repro_fh, ">", $repro_file;
     say $repro_fh $cmd;
     _add_archive_comment( "NOTE",          $note,           $repro_fh );
+    _add_archive_comment( "REPROWARNING",  $error_summary,  $repro_fh );
     _add_archive_comment( "WHEN",          $now,            $repro_fh );
     _add_archive_comment( "WORKDIR",       $cwd,            $repro_fh );
     _add_archive_comment( "SCRIPTDIR",     $full_prog_dir,  $repro_fh );
@@ -184,7 +185,7 @@ EOF
 }
 
 sub _validate_perl_info {
-    my ( $archive_lines, $error ) = @_;
+    my ( $archive_lines, $warnings ) = @_;
 
     my ($archive_perl_path)
         = _extract_from_archive( $archive_lines, "PERLPATH" );
@@ -195,13 +196,14 @@ sub _validate_perl_info {
 
     my ( $perl_path, $perl_version, $perl_inc ) = _perl_info();
 
-    _compare( $archive_perl_path,    $perl_path,    "PERLPATH",    $error );
-    _compare( $archive_perl_version, $perl_version, "PERLVERSION", $error );
-    _compare( $archive_perl_inc,     $perl_inc,     "PERLINC",     $error );
+    _compare( $archive_perl_path, $perl_path, "PERLPATH", $warnings );
+    _compare( $archive_perl_version, $perl_version, "PERLVERSION",
+        $warnings );
+    _compare( $archive_perl_inc, $perl_inc, "PERLINC", $warnings );
 }
 
 sub _validate_git_info {
-    my ( $archive_lines, $prog_dir, $error ) = @_;
+    my ( $archive_lines, $prog_dir, $warnings ) = @_;
 
     my ($archive_gitcommit)
         = _extract_from_archive( $archive_lines, "GITCOMMIT" );
@@ -215,11 +217,11 @@ sub _validate_git_info {
     my ( $gitcommit, $gitstatus, $gitdiff_cached, $gitdiff )
         = _git_info($prog_dir);
 
-    _compare( $archive_gitcommit, $gitcommit, "GITCOMMIT", $error );
-    _compare( $archive_gitstatus, $gitstatus, "GITSTATUS", $error );
+    _compare( $archive_gitcommit, $gitcommit, "GITCOMMIT", $warnings );
+    _compare( $archive_gitstatus, $gitstatus, "GITSTATUS", $warnings );
     _compare( $archive_gitdiff_cached, $gitdiff_cached, "GITDIFFSTAGED",
-        $error );
-    _compare( $archive_gitdiff, $gitdiff, "GITDIFF", $error );
+        $warnings );
+    _compare( $archive_gitdiff, $gitdiff, "GITDIFF", $warnings );
 }
 
 sub _extract_from_archive {
@@ -232,13 +234,14 @@ sub _extract_from_archive {
 }
 
 sub _compare {
-    my ( $archived, $current, $key, $error_counter_ref ) = @_;
+    my ( $archived, $current, $key, $warnings ) = @_;
     chomp $current;
     chomp $archived;
 
     if ( $archived ne $current ) {
-        say STDERR "WARNING: Archived and current $key do NOT match";
-        $$error_counter_ref++;
+        my $warning_message = "Archived and current $key do NOT match";
+        push @$warnings, $warning_message;
+        say STDERR "WARNING: $warning_message";
     }
 }
 
