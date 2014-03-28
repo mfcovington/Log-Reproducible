@@ -101,13 +101,17 @@ sub _reproduce_cmd {
     close $old_repro_fh;
 
     my $cmd = $archive[0];
-    my ( $old_prog, @args ) = $cmd =~ /((?:\'[^']+\')|(?:\"[^"]+\")|(?:\S+))/g;
+    my ( $archived_prog, @args )
+        = $cmd =~ /((?:\'[^']+\')|(?:\"[^"]+\")|(?:\S+))/g;
     @ARGV = @args;
     say STDERR "Reproducing archive: $old_repro_file";
-    _validate_prog_name( $old_prog, $prog, @args );
-    _validate_perl_info( \@archive );
-    _validate_git_info( \@archive, $prog_dir );
+    my $error = 0;
+    _validate_prog_name( $archived_prog, $prog, @args );
+    _validate_perl_info( \@archive, \$error );
+    _validate_git_info( \@archive, $prog_dir, \$error );
+    _do_or_die() if $error;
     return $cmd;
+
 }
 
 sub _archive_cmd {
@@ -168,9 +172,10 @@ sub _add_archive_comment {
 }
 
 sub _validate_prog_name {
-    my ( $old_prog, $prog, @args ) = @_;
-    die <<EOF if $old_prog ne $prog;
-Current ($prog) and archived ($old_prog) program names don't match!
+    my ( $archived_prog, $prog, @args ) = @_;
+    local $SIG{__DIE__} = sub {warn @_; exit 1};
+    die <<EOF if $archived_prog ne $prog;
+Current ($prog) and archived ($archived_prog) program names don't match!
 If this was expected (e.g., filename was changed), please re-run as:
 
     perl $prog @args
@@ -179,7 +184,7 @@ EOF
 }
 
 sub _validate_perl_info {
-    my $archive_lines = shift;
+    my ( $archive_lines, $error ) = @_;
 
     my ($archive_perl_path)
         = _extract_from_archive( $archive_lines, "PERLPATH" );
@@ -190,13 +195,13 @@ sub _validate_perl_info {
 
     my ( $perl_path, $perl_version, $perl_inc ) = _perl_info();
 
-    _compare( $archive_perl_path,    $perl_path,    "PERLPATH" );
-    _compare( $archive_perl_version, $perl_version, "PERLVERSION" );
-    _compare( $archive_perl_inc,     $perl_inc,     "PERLINC" );
+    _compare( $archive_perl_path,    $perl_path,    "PERLPATH",    $error );
+    _compare( $archive_perl_version, $perl_version, "PERLVERSION", $error );
+    _compare( $archive_perl_inc,     $perl_inc,     "PERLINC",     $error );
 }
 
 sub _validate_git_info {
-    my ( $archive_lines, $prog_dir ) = @_;
+    my ( $archive_lines, $prog_dir, $error ) = @_;
 
     my ($archive_gitcommit)
         = _extract_from_archive( $archive_lines, "GITCOMMIT" );
@@ -210,10 +215,11 @@ sub _validate_git_info {
     my ( $gitcommit, $gitstatus, $gitdiff_cached, $gitdiff )
         = _git_info($prog_dir);
 
-    _compare( $archive_gitcommit,      $gitcommit,      "GITCOMMIT" );
-    _compare( $archive_gitstatus,      $gitstatus,      "GITSTATUS" );
-    _compare( $archive_gitdiff_cached, $gitdiff_cached, "GITDIFFSTAGED" );
-    _compare( $archive_gitdiff,        $gitdiff,        "GITDIFF" );
+    _compare( $archive_gitcommit, $gitcommit, "GITCOMMIT", $error );
+    _compare( $archive_gitstatus, $gitstatus, "GITSTATUS", $error );
+    _compare( $archive_gitdiff_cached, $gitdiff_cached, "GITDIFFSTAGED",
+        $error );
+    _compare( $archive_gitdiff, $gitdiff, "GITDIFF", $error );
 }
 
 sub _extract_from_archive {
@@ -226,12 +232,30 @@ sub _extract_from_archive {
 }
 
 sub _compare {
-    my ( $old, $new, $key ) = @_;
-    chomp $new;
-    chomp $old;
+    my ( $archived, $current, $key, $error_counter_ref ) = @_;
+    chomp $current;
+    chomp $archived;
 
-    say STDERR "WARNING: Archived and current $key do NOT match"
-        if $old ne $new;
+    if ( $archived ne $current ) {
+        say STDERR "WARNING: Archived and current $key do NOT match";
+        $$error_counter_ref++;
+    }
+}
+
+sub _do_or_die {
+    say STDERR
+        "\nThere are inconsistencies between archived and current conditions.";
+    print STDERR
+        "This may affect reproducibility. Do you want to continue? (y/n) ";
+    my $response = <STDIN>;
+    if ( $response =~ /^Y(?:ES)?$/i ) {
+        return;
+    }
+    elsif ( $response =~ /^N(?:O)?$/i ) {
+        say "Better luck next time...";
+        exit;
+    }
+    else { _do_or_die(); }
 }
 
 1;
