@@ -52,9 +52,17 @@ perl sample.pl --reproduce rlog-sample.pl-YYYYMMDD.HHMMSS
 This results in:
 
 1. The script being executed with the command line options and arguments used in the original archived run
-2. The creation of a new archive file identical to the older one (except with an updated date/time in the archive filename)
+2. The creation of a new archive file identical to the older one, except with:
+    - an updated date and time
+    - the addition of /path/to/the/old/archive
 
-When reproducing an archived analysis, warnings will be issued if the current Perl- or git-related info fails to match that of the archive. Such inconsistencies are potential indicators that an archived analysis will not be reproduced in a faithful manner. Similarly, a reproduced analysis will fail if the current script name does not match the archived script name.
+#### Inconsistencies between current and archived conditions
+
+When reproducing an archived analysis, warnings will be issued if the current Perl- or git-related info fails to match that of the archive. Such inconsistencies are potential indicators that an archived analysis will not be reproduced in a faithful manner.
+
+After the warnings have been displayed, there is a prompt for whether to continue reproducing the archived analysis. If the user chooses to continue, all warnings will be logged in the new archive.
+
+If the current script name does not match the archived script name, the reproduced analysis will immediately fail (with instructions on how to proceed).
 
 ### Adding Archive Notes
 
