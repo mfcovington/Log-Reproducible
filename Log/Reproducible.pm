@@ -108,6 +108,7 @@ sub _reproduce_cmd {
         = $cmd =~ /((?:\'[^']+\')|(?:\"[^"]+\")|(?:\S+))/g;
     @ARGV = @args;
     say STDERR "Reproducing archive: $old_repro_file";
+    say STDERR "Reproducing command: $cmd";
     _validate_prog_name( $archived_prog, $prog, @args );
     _validate_perl_info( \@archive, $warnings );
     _validate_git_info( \@archive, $prog_dir, $warnings );
