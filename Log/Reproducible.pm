@@ -112,6 +112,7 @@ sub _reproduce_cmd {
     _validate_prog_name( $archived_prog, $prog, @args );
     _validate_perl_info( \@archive, $warnings );
     _validate_git_info( \@archive, $prog_dir, $warnings );
+    _validate_env_info( \@archive, $warnings );
     _do_or_die() if scalar @$warnings > 0;
     return $cmd;
 }
@@ -127,6 +128,7 @@ sub _archive_cmd {
     my $cwd = cwd;
     my $full_prog_dir = $prog_dir eq "./" ? $cwd : "$cwd/$prog_dir";
     $full_prog_dir = "$prog_dir ($full_prog_dir)";
+    my $env_summary = _env_info();
 
     open my $repro_fh, ">", $repro_file;
     say $repro_fh $cmd;
@@ -143,6 +145,7 @@ sub _archive_cmd {
     _add_archive_comment( "GITSTATUS",     $gitstatus,      $repro_fh );
     _add_archive_comment( "GITDIFFSTAGED", $gitdiff_cached, $repro_fh );
     _add_archive_comment( "GITDIFF",       $gitdiff,        $repro_fh );
+    _add_archive_comment( "ENV",           $env_summary,    $repro_fh );
     close $repro_fh;
     say STDERR "Created new archive: $repro_file";
 }
@@ -168,6 +171,10 @@ sub _perl_info {
     my $perl_version = $^V;
     my $perl_inc     = join ":", @INC;
     return $perl_path, $perl_version, $perl_inc;
+}
+
+sub _env_info {
+    return join "\n", map {"$_:$ENV{$_}"} sort keys %ENV;
 }
 
 sub _add_archive_comment {
@@ -228,6 +235,13 @@ sub _validate_git_info {
     _compare( $archive_gitdiff_cached, $gitdiff_cached, "GITDIFFSTAGED",
         $warnings );
     _compare( $archive_gitdiff, $gitdiff, "GITDIFF", $warnings );
+}
+
+sub _validate_env_info {
+    my ( $archive_lines, $warnings ) = @_;
+    my ($archive_env) = _extract_from_archive( $archive_lines, "ENV" );
+    my $env = _env_info();
+    _compare( $archive_env, $env, "ENV", $warnings );
 }
 
 sub _extract_from_archive {
