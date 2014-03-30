@@ -122,6 +122,7 @@ sub _reproduce_cmd {
     print STDERR "Reproducing archive: $old_repro_file\n";
     print STDERR "Reproducing command: $cmd\n";
     _validate_prog_name( $archived_prog, $prog, @args );
+    _validate_archive_version( \@archive, $warnings );
     _validate_perl_info( \@archive, $warnings );
     _validate_git_info( \@archive, $prog_dir, $warnings );
     _validate_env_info( \@archive, $warnings );
@@ -148,6 +149,7 @@ sub _archive_cmd {
     _add_archive_comment( "NOTE",          $note,           $repro_fh );
     _add_archive_comment( "REPRODUCED",    $old_repro_file, $repro_fh );
     _add_archive_comment( "REPROWARNING",  $error_summary,  $repro_fh );
+    _add_archive_comment( "ARCHIVERSION",  $VERSION,        $repro_fh );
     _add_archive_comment( "WHEN",          $now,            $repro_fh );
     _add_archive_comment( "WORKDIR",       $cwd,            $repro_fh );
     _add_archive_comment( "SCRIPTDIR",     $full_prog_dir,  $repro_fh );
@@ -208,6 +210,13 @@ If this was expected (e.g., filename was changed), please re-run as:
     perl $prog @args
 
 EOF
+}
+
+sub _validate_archive_version {
+    my ( $archive_lines, $warnings ) = @_;
+    my ($archive_version)
+        = _extract_from_archive( $archive_lines, "ARCHIVERSION" );
+    _compare( $archive_version, $VERSION, "ARCHIVERSION", $warnings );
 }
 
 sub _validate_perl_info {
