@@ -6,8 +6,6 @@
 #
 use strict;
 use warnings;
-use autodie;
-use feature 'say';
 use Test::More tests => 4;
 use FindBin qw($Bin);
 use lib "$Bin/../";
@@ -58,7 +56,7 @@ subtest '_set_dir tests' => sub {
 
 sub get_recent_archive {
     my $archive_dir = shift;
-    opendir (my $dh, $archive_dir);
+    opendir (my $dh, $archive_dir) or die "Cannot opendir $archive_dir: $!";
     my @archives = grep { /^rlog-$script/ && -f "$archive_dir/$_" } readdir($dh);
     closedir $dh;
     return pop @archives;
