@@ -1,6 +1,7 @@
 autobuild.sh
 Build.pl
 CHANGES
+future-README.md
 MANIFEST
 README.md
 sample.pl
