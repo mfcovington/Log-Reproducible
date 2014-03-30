@@ -11,6 +11,18 @@ use Config;
 # TODO: Standalone script that can be used upstream of any command line functions
 # TODO: Allow customizion of --repronote/--reprodir/--reproduce upon import (to avoid conflicts or just shorten)
 
+our $VERSION = '0.5.1';
+
+=head1 NAME
+
+Log::Reproducible - Effortless record-keeping and enhanced reproducibility. Set it and forget it... until you need it!
+
+=head1 AUTHOR
+
+Michael F. Covington <mfcovington@gmail.com>
+
+=cut
+
 sub import {
     my ( $pkg, $dir ) = @_;
     reproduce($dir);
