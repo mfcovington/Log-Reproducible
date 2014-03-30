@@ -1,0 +1,10 @@
+autobuild.sh
+Build.pl
+CHANGES
+future-README.md
+MANIFEST
+README.md
+sample.pl
+lib/Log/Reproducible.pm
+t/reproducible.t
+t/test-reproducible.pl

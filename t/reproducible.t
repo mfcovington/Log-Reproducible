@@ -8,7 +8,7 @@ use strict;
 use warnings;
 use Test::More tests => 4;
 use FindBin qw($Bin);
-use lib "$Bin/../";
+use lib "$Bin/../lib";
 use Cwd;
 
 # TODO: Account for systems with REPRO_DIR environmental variable set
@@ -20,18 +20,22 @@ BEGIN {
 }
 
 my @got;
-my $expected = ["a: 1\n", "b: 'two words'\n", "c: string\n", "extra: some other stuff\n"];
-my $script = "test-reproducible.pl";
-my $cmd = "perl $Bin/$script";
+my $expected = [
+    "a: 1\n",
+    "b: 'two words'\n",
+    "c: string\n",
+    "extra: some other stuff\n"
+];
+my $script      = "test-reproducible.pl";
+my $archive_dir = "$Bin/repro-archive";
+my $cmd         = "perl $Bin/$script --reprodir $archive_dir";
 
 @got = `$cmd -a 1 -b 'two words' -c string some other stuff 2> /dev/null`;
 is_deeply( \@got, $expected, 'Run and archive Perl script' );
 
 sleep 1;
 
-my $archive_dir = "$Bin/repro-archive";
 my $archive = get_recent_archive($archive_dir);
-
 @got = `$cmd --reproduce $archive_dir/$archive 2> /dev/null`;
 is_deeply( \@got, $expected, 'Run an archived Perl script' );
 

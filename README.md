@@ -181,6 +181,17 @@ In addition to a newly added file and an untracked file, there are two previousl
 
 For most purposes, you might not require all of this information; however, if you need to determine the conditions that existed when you ran a script six months ago, these details could be critical!
 
+## Installation
+
+`Log::Reproducible` can be installed using the `autobuild.sh` script or by running the following commands:
+
+```sh
+perl Build.pl
+./Build
+./Build test
+./Build install
+```
+
 ## Future Features
 
 Some features I might add are:
