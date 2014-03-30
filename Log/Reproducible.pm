@@ -1,8 +1,6 @@
 package Log::Reproducible;
 use strict;
 use warnings;
-use autodie;
-use feature 'say';
 use Cwd;
 use File::Path 'make_path';
 use File::Basename;
@@ -98,7 +96,8 @@ sub _reproduce_cmd {
 
     die "Reproducible archive file ($old_repro_file) does not exists.\n"
         unless -e $old_repro_file;
-    open my $old_repro_fh, "<", $old_repro_file;
+    open my $old_repro_fh, "<", $old_repro_file
+        or die "Cannot open $old_repro_file for reading: $!";
     my @archive = <$old_repro_fh>;
     chomp @archive;
     close $old_repro_fh;
@@ -107,8 +106,8 @@ sub _reproduce_cmd {
     my ( $archived_prog, @args )
         = $cmd =~ /((?:\'[^']+\')|(?:\"[^"]+\")|(?:\S+))/g;
     @ARGV = @args;
-    say STDERR "Reproducing archive: $old_repro_file";
-    say STDERR "Reproducing command: $cmd";
+    print STDERR "Reproducing archive: $old_repro_file\n";
+    print STDERR "Reproducing command: $cmd\n";
     _validate_prog_name( $archived_prog, $prog, @args );
     _validate_perl_info( \@archive, $warnings );
     _validate_git_info( \@archive, $prog_dir, $warnings );
@@ -130,8 +129,9 @@ sub _archive_cmd {
     $full_prog_dir = "$prog_dir ($full_prog_dir)";
     my $env_summary = _env_info();
 
-    open my $repro_fh, ">", $repro_file;
-    say $repro_fh $cmd;
+    open my $repro_fh, ">", $repro_file
+        or die "Cannot open $repro_file for writing: $!";
+    print $repro_fh "$cmd\n";
     _add_archive_comment( "NOTE",          $note,           $repro_fh );
     _add_archive_comment( "REPRODUCED",    $old_repro_file, $repro_fh );
     _add_archive_comment( "REPROWARNING",  $error_summary,  $repro_fh );
@@ -147,7 +147,7 @@ sub _archive_cmd {
     _add_archive_comment( "GITDIFF",       $gitdiff,        $repro_fh );
     _add_archive_comment( "ENV",           $env_summary,    $repro_fh );
     close $repro_fh;
-    say STDERR "Created new archive: $repro_file";
+    print STDERR "Created new archive: $repro_file\n";
 }
 
 sub _git_info {
@@ -168,7 +168,7 @@ sub _git_info {
 
 sub _perl_info {
     my $perl_path    = $Config{perlpath};
-    my $perl_version = $^V;
+    my $perl_version = sprintf "v%vd", $^V;
     my $perl_inc     = join ":", @INC;
     return $perl_path, $perl_version, $perl_inc;
 }
@@ -181,7 +181,7 @@ sub _add_archive_comment {
     my ( $title, $comment, $repro_fh ) = @_;
     if ( defined $comment ) {
         my @comment_lines = split /\n/, $comment;
-        say $repro_fh "#$title: $_" for @comment_lines;
+        print $repro_fh "#$title: $_\n" for @comment_lines;
     }
 }
 
@@ -261,13 +261,13 @@ sub _compare {
     if ( $archived ne $current ) {
         my $warning_message = "Archived and current $key do NOT match";
         push @$warnings, $warning_message;
-        say STDERR "WARNING: $warning_message";
+        print STDERR "WARNING: $warning_message\n";
     }
 }
 
 sub _do_or_die {
-    say STDERR
-        "\nThere are inconsistencies between archived and current conditions.";
+    print STDERR
+        "\nThere are inconsistencies between archived and current conditions.\n";
     print STDERR
         "This may affect reproducibility. Do you want to continue? (y/n) ";
     my $response = <STDIN>;
@@ -275,7 +275,7 @@ sub _do_or_die {
         return;
     }
     elsif ( $response =~ /^N(?:O)?$/i ) {
-        say "Better luck next time...";
+        print "Better luck next time...\n";
         exit;
     }
     else { _do_or_die(); }
