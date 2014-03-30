@@ -1,6 +1,8 @@
 # Log::Reproducible (0.5.0)
 
-**TAGLINE:** Increase your reproducibility with the Perl module Log::Reproducible. Set it and forget it... *until you need it!*
+Increase your reproducibility with the Perl module Log::Reproducible. 
+
+**TAGLINE:** Set it and forget it... *until you need it!*
 
 **MOTIVATION:** In science (and probably any other analytical field), reproducibility is critical. If an analysis cannot be faithfully reproduced, it was arguably a waste of time.
 
@@ -11,6 +13,7 @@ How does Log::Reproducible increase reproducibility?
 - Detects and [reports inconsistencies](#inconsistencies-between-current-and-archived-conditions) between archived and replicated conditions, including differences in:
     - Perl setup
     - State of the Git repository (if the script is under Git version control)
+    - Environmental variables
 
 ## Usage
 
@@ -36,10 +39,11 @@ Also included in the archive are (in order):
 - the directory containing the script
 - Perl-related info (version, path to perl, and `@INC`)
 - Git repository info, if applicable (see [Git Repo Info](#git-repo-info), below)
+- Environmental variables and their values (`%ENV`)
 
 For example, running the script `sample.pl` would result in an archive file named `rlog-sample.pl-YYYYMMDD.HHMMSS`.
 
-If it was run as `perl bin/sample.pl -a 1 -b 2 -c 3 OTHER ARGUMENTS`, the contents of the archive file would be:
+If it was run as `perl bin/sample.pl -a 1 -b 2 -c 3 OTHER ARGUMENTS`, the contents of the archive file would look something like:
 
     sample.pl -a 1 -b 2 -c 3 OTHER ARGUMENTS
     #WHEN: YYYYMMDD.HHMMSS
@@ -48,6 +52,10 @@ If it was run as `perl bin/sample.pl -a 1 -b 2 -c 3 OTHER ARGUMENTS`, the conten
     #PERLVERSION: v5.18.2
     #PERLPATH: /path/to/bin/perl
     #PERLINC: /path/to/perl/lib:/path/to/another/perl/lib:.
+    #ENV: PATH:/usr/local/bin:/paths/to/more/bins
+    #ENV: _system_name:OSX
+    #ENV: _system_version:10.9
+    ...
 
 ### Reproducing an Archived Analysis
 
@@ -66,7 +74,7 @@ This results in:
 
 #### Inconsistencies between current and archived conditions
 
-When reproducing an archived analysis, warnings will be issued if the current Perl- or Git-related info fails to match that of the archive. Such inconsistencies are potential indicators that an archived analysis will not be reproduced in a faithful manner.
+When reproducing an archived analysis, warnings will be issued if the current Perl-, Git-, or ENV-related info fails to match that of the archive. Such inconsistencies are potential indicators that an archived analysis will not be reproduced in a faithful manner.
 
 After the warnings have been displayed, there is a prompt for whether to continue reproducing the archived analysis. If the user chooses to continue, all warnings will be logged in the new archive.
 
@@ -175,7 +183,7 @@ For most purposes, you might not require all of this information; however, if yo
 
 ## Future Features
 
-Some features I may add are:
+Some features I might add are:
 
 - Verbose mode
     - Print to screen the parameters used when reproducing an archived run
