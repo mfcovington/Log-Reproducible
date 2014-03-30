@@ -1,0 +1,8 @@
+Build.pl
+CHANGES
+MANIFEST
+README.md
+sample.pl
+lib/Log/Reproducible.pm
+t/reproducible.t
+t/test-reproducible.pl
