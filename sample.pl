@@ -6,8 +6,6 @@
 #
 use strict;
 use warnings;
-use autodie;
-use feature 'say';
 use Getopt::Long;
 use Log::Reproducible;
 
@@ -22,7 +20,7 @@ my $options = GetOptions (
     "c=s" => \$c,
 );
 
-say "a: $a";
-say "b: $b";
-say "c: $c";
-say "extra: @ARGV";
+print "a: $a\n";
+print "b: $b\n";
+print "c: $c\n";
+print "extra: @ARGV\n";
