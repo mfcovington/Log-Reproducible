@@ -149,6 +149,7 @@ sub _archive_cmd {
     _add_archive_comment( "NOTE",          $note,           $repro_fh );
     _add_archive_comment( "REPRODUCED",    $old_repro_file, $repro_fh );
     _add_archive_comment( "REPROWARNING",  $error_summary,  $repro_fh );
+    print $repro_fh "#" x 80, "\n";
     _add_archive_comment( "ARCHIVERSION",  $VERSION,        $repro_fh );
     _add_archive_comment( "WHEN",          $now,            $repro_fh );
     _add_archive_comment( "WORKDIR",       $cwd,            $repro_fh );
