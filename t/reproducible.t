@@ -8,7 +8,7 @@ use strict;
 use warnings;
 use Test::More tests => 4;
 use FindBin qw($Bin);
-use lib "$Bin/../";
+use lib "$Bin/../lib";
 use Cwd;
 
 # TODO: Account for systems with REPRO_DIR environmental variable set
