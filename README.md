@@ -1,4 +1,4 @@
-# Log::Reproducible (0.5.1)
+# Log::Reproducible (0.6.0)
 
 Increase your reproducibility with the Perl module Log::Reproducible. 
 
@@ -180,6 +180,17 @@ If you are familiar with Git, you will be able to figure out that the Git reposi
 In addition to a newly added file and an untracked file, there are two previously-committed modified files. One modified file has subsequently been staged (`staged-modified-file`) and the other is unstaged (`unstaged-modified-file`). Both modified files have had `A deleted line` replaced with `An added line`.
 
 For most purposes, you might not require all of this information; however, if you need to determine the conditions that existed when you ran a script six months ago, these details could be critical!
+
+## Installation
+
+`Log::Reproducible` can be installed using the `autobuild.sh` script or by running the following commands:
+
+```sh
+perl Build.pl
+./Build
+./Build test
+./Build install
+```
 
 ## Future Features
 

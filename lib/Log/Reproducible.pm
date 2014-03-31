@@ -10,6 +10,19 @@ use Config;
 # TODO: Add verbose (or silent) option
 # TODO: Standalone script that can be used upstream of any command line functions
 # TODO: Allow customizion of --repronote/--reprodir/--reproduce upon import (to avoid conflicts or just shorten)
+# TODO: Auto-build README using POD
+
+our $VERSION = '0.6.0';
+
+=head1 NAME
+
+Log::Reproducible - Effortless record-keeping and enhanced reproducibility. Set it and forget it... until you need it!
+
+=head1 AUTHOR
+
+Michael F. Covington <mfcovington@gmail.com>
+
+=cut
 
 sub import {
     my ( $pkg, $dir ) = @_;
@@ -109,6 +122,7 @@ sub _reproduce_cmd {
     print STDERR "Reproducing archive: $old_repro_file\n";
     print STDERR "Reproducing command: $cmd\n";
     _validate_prog_name( $archived_prog, $prog, @args );
+    _validate_archive_version( \@archive, $warnings );
     _validate_perl_info( \@archive, $warnings );
     _validate_git_info( \@archive, $prog_dir, $warnings );
     _validate_env_info( \@archive, $warnings );
@@ -135,6 +149,8 @@ sub _archive_cmd {
     _add_archive_comment( "NOTE",          $note,           $repro_fh );
     _add_archive_comment( "REPRODUCED",    $old_repro_file, $repro_fh );
     _add_archive_comment( "REPROWARNING",  $error_summary,  $repro_fh );
+    print $repro_fh "#" x 80, "\n";
+    _add_archive_comment( "ARCHIVERSION",  $VERSION,        $repro_fh );
     _add_archive_comment( "WHEN",          $now,            $repro_fh );
     _add_archive_comment( "WORKDIR",       $cwd,            $repro_fh );
     _add_archive_comment( "SCRIPTDIR",     $full_prog_dir,  $repro_fh );
@@ -195,6 +211,13 @@ If this was expected (e.g., filename was changed), please re-run as:
     perl $prog @args
 
 EOF
+}
+
+sub _validate_archive_version {
+    my ( $archive_lines, $warnings ) = @_;
+    my ($archive_version)
+        = _extract_from_archive( $archive_lines, "ARCHIVERSION" );
+    _compare( $archive_version, $VERSION, "ARCHIVERSION", $warnings );
 }
 
 sub _validate_perl_info {
