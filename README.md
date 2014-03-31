@@ -1,4 +1,4 @@
-# Log::Reproducible (0.5.1)
+# Log::Reproducible (0.6.0)
 
 Increase your reproducibility with the Perl module Log::Reproducible. 
 
