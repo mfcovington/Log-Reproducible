@@ -138,9 +138,7 @@ sub _archive_cmd {
     my ( $gitcommit, $gitstatus, $gitdiff_cached, $gitdiff )
         = _git_info($prog_dir);
     my ( $perl_path, $perl_version, $perl_inc ) = _perl_info();
-    my $cwd = cwd;
-    my $full_prog_dir = $prog_dir eq "./" ? $cwd : "$cwd/$prog_dir";
-    $full_prog_dir = "$prog_dir ($full_prog_dir)";
+    my ( $cwd, $script_dir ) = _dir_info($prog_dir);
     my $env_summary = _env_info();
 
     open my $repro_fh, ">", $repro_file
@@ -151,7 +149,7 @@ sub _archive_cmd {
     _add_archive_comment( "REPROWARNING",  $error_summary,  $repro_fh );
     _add_archive_comment( "WHEN",          $now,            $repro_fh );
     _add_archive_comment( "WORKDIR",       $cwd,            $repro_fh );
-    _add_archive_comment( "SCRIPTDIR",     $full_prog_dir,  $repro_fh );
+    _add_archive_comment( "SCRIPTDIR",     $script_dir,      $repro_fh );
     print $repro_fh "#" x 80, "\n";
     _add_archive_comment( "ARCHIVERSION",  $VERSION,        $repro_fh );
     _add_archive_comment( "PERLVERSION",   $perl_version,   $repro_fh );
@@ -187,6 +185,26 @@ sub _perl_info {
     my $perl_version = sprintf "v%vd", $^V;
     my $perl_inc     = join ":", @INC;
     return $perl_path, $perl_version, $perl_inc;
+}
+
+sub _dir_info {
+    my $prog_dir = shift;
+
+    my $cwd = cwd;
+    my $absolute_prog_dir;
+
+    if ( $prog_dir eq "./" ) {
+        $absolute_prog_dir = $cwd;
+    }
+    elsif ( $prog_dir =~ /^\// ) {
+        $absolute_prog_dir = $prog_dir;
+    }
+    else {
+        $absolute_prog_dir = "$cwd/$prog_dir";
+    }
+    my $script_dir = "$prog_dir ($absolute_prog_dir)";
+
+    return $cwd, $script_dir;
 }
 
 sub _env_info {
