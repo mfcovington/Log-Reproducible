@@ -151,9 +151,7 @@ sub _archive_cmd {
     _add_archive_comment( "WHEN",          $now,            $repro_fh );
     _add_archive_comment( "WORKDIR",       $cwd,            $repro_fh );
     _add_archive_comment( "SCRIPTDIR",     $script_dir,      $repro_fh );
-    print $repro_fh "#" x 80, "\n";
-    print $repro_fh "#" x 21, " GOTO END OF FILE FOR EXIT CODE INFO. ", "#" x 21, "\n";
-    print $repro_fh "#" x 80, "\n";
+    _add_divider($repro_fh);
     _add_archive_comment( "ARCHIVERSION",  $VERSION,        $repro_fh );
     _add_archive_comment( "PERLVERSION",   $perl_version,   $repro_fh );
     _add_archive_comment( "PERLPATH",      $perl_path,      $repro_fh );
@@ -225,6 +223,13 @@ sub _add_archive_comment {
         my @comment_lines = split /\n/, $comment;
         print $repro_fh "#$title: $_\n" for @comment_lines;
     }
+}
+
+sub _add_divider {
+    my $repro_fh = shift;
+    print $repro_fh "#" x 80, "\n";
+    print $repro_fh "#" x 21, " GOTO END OF FILE FOR EXIT CODE INFO. ", "#" x 21, "\n";
+    print $repro_fh "#" x 80, "\n";
 }
 
 sub _validate_prog_name {
