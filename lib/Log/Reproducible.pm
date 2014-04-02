@@ -161,11 +161,7 @@ sub _archive_cmd {
     _add_archive_comment( "GITDIFFSTAGED", $gitdiff_cached, $repro_fh );
     _add_archive_comment( "GITDIFF",       $gitdiff,        $repro_fh );
     _add_archive_comment( "ENV",           $env_summary,    $repro_fh );
-    print $repro_fh "#" x 80, "\n";
-    print $repro_fh "#" x 6, " IF EXIT CODE IS MISSING, SCRIPT WAS CANCELLED OR IS STILL RUNNING! ", "#" x 6, "\n";
-    print $repro_fh "#" x 18, " TYPICALLY: 0 == SUCCESS AND 255 == FAILURE ", "#" x 18, "\n";
-    print $repro_fh "#" x 80, "\n";
-    print $repro_fh "#EXITCODE: ";
+    _add_exit_code_preamble($repro_fh);
     close $repro_fh;
     print STDERR "Created new archive: $repro_file\n";
 }
@@ -230,6 +226,15 @@ sub _add_divider {
     print $repro_fh "#" x 80, "\n";
     print $repro_fh "#" x 21, " GOTO END OF FILE FOR EXIT CODE INFO. ", "#" x 21, "\n";
     print $repro_fh "#" x 80, "\n";
+}
+
+sub _add_exit_code_preamble {
+    my $repro_fh = shift;
+    print $repro_fh "#" x 80, "\n";
+    print $repro_fh "#" x 6, " IF EXIT CODE IS MISSING, SCRIPT WAS CANCELLED OR IS STILL RUNNING! ", "#" x 6, "\n";
+    print $repro_fh "#" x 18, " TYPICALLY: 0 == SUCCESS AND 255 == FAILURE ", "#" x 18, "\n";
+    print $repro_fh "#" x 80, "\n";
+    print $repro_fh "#EXITCODE: ";
 }
 
 sub _validate_prog_name {
