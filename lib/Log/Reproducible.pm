@@ -44,7 +44,7 @@ sub reproduce {
     make_path $dir;
 
     my ( $prog, $prog_dir, $cmd, $note ) = _parse_command();
-    ( our $repro_file, my $now ) = _set_repro_file( $dir, $prog );
+    my ( $repro_file, $now ) = _set_repro_file( $dir, $prog );
     my $old_repro_file;
 
     my $warnings = [];
@@ -55,14 +55,7 @@ sub reproduce {
     }
     _archive_cmd( $cmd, $old_repro_file, $repro_file, $note, $prog_dir, $now,
         $warnings );
-
-    END {
-        return unless defined $repro_file;
-        open my $repro_fh, ">>", $repro_file
-            or die "Cannot open $repro_file for appending: $!";
-        print $repro_fh "$?\n";
-        close $repro_fh;
-    }
+    _exit_code($repro_file);
 }
 
 sub _set_dir {
@@ -335,6 +328,17 @@ sub _do_or_die {
         exit;
     }
     else { _do_or_die(); }
+}
+
+sub _exit_code {
+    our $repro_file = shift;
+    END {
+        return unless defined $repro_file;
+        open my $repro_fh, ">>", $repro_file
+            or die "Cannot open $repro_file for appending: $!";
+        print $repro_fh "$?\n";
+        close $repro_fh;
+    }
 }
 
 1;
