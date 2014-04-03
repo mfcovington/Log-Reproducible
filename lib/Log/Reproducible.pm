@@ -12,7 +12,7 @@ use Config;
 # TODO: Allow customizion of --repronote/--reprodir/--reproduce upon import (to avoid conflicts or just shorten)
 # TODO: Auto-build README using POD
 
-our $VERSION = '0.6.0';
+our $VERSION = '0.7.0';
 
 =head1 NAME
 
