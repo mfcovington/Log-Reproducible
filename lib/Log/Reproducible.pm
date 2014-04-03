@@ -107,7 +107,9 @@ sub _set_repro_file {
 
 sub _now {
     my %now;
-    $now{'timestamp'} = strftime "%Y%m%d.%H%M%S", localtime;
+    my @localtime = localtime;
+    $now{'timestamp'} = strftime "%Y%m%d.%H%M%S", @localtime;
+    $now{'when'} = strftime "at %X on %a %b %d, %Y", @localtime;
     $now{'seconds'} = time();
     return \%now;
 }
@@ -155,9 +157,9 @@ sub _archive_cmd {
     _add_archive_comment( "NOTE",          $note,           $repro_fh );
     _add_archive_comment( "REPRODUCED",    $old_repro_file, $repro_fh );
     _add_archive_comment( "REPROWARNING",  $error_summary,  $repro_fh );
-    _add_archive_comment( "STARTED",       $$start{'timestamp'}, $repro_fh );
+    _add_archive_comment( "STARTED",       $$start{'when'}, $repro_fh );
     _add_archive_comment( "WORKDIR",       $cwd,            $repro_fh );
-    _add_archive_comment( "SCRIPTDIR",     $script_dir,      $repro_fh );
+    _add_archive_comment( "SCRIPTDIR",     $script_dir,     $repro_fh );
     _add_divider($repro_fh);
     _add_archive_comment( "ARCHIVERSION",  $VERSION,        $repro_fh );
     _add_archive_comment( "PERLVERSION",   $perl_version,   $repro_fh );
@@ -357,7 +359,7 @@ sub _exit_code {
         open my $repro_fh, ">>", $repro_file
             or die "Cannot open $repro_file for appending: $!";
         print $repro_fh "$?\n";    # This completes EXITCODE line
-        _add_archive_comment( "FINISHED", $$finish{'timestamp'}, $repro_fh );
+        _add_archive_comment( "FINISHED", $$finish{'when'}, $repro_fh );
         _add_archive_comment( "ELAPSED", $elapsed, $repro_fh );
         close $repro_fh;
     }
