@@ -34,28 +34,43 @@ Now, every time you run your script, the command line options and other argument
 Also included in the archive are (in order):
 
 - custom notes, if provided (see [Adding Archive Notes](#adding-archive-notes), below)
-- the date/time
+- the date/time that the script started
 - the working directory
 - the directory containing the script
+- archive version (i.e., Log::Reproducible version)
 - Perl-related info (version, path to perl, and `@INC`)
 - Git repository info, if applicable (see [Git Repo Info](#git-repo-info), below)
-- Environmental variables and their values (`%ENV`)
+- environmental variables and their values (`%ENV`)
+- the exit code
+- the date/time that the script finished
+- elapsed time
 
 For example, running the script `sample.pl` would result in an archive file named `rlog-sample.pl-YYYYMMDD.HHMMSS`.
 
 If it was run as `perl bin/sample.pl -a 1 -b 2 -c 3 OTHER ARGUMENTS`, the contents of the archive file would look something like:
 
     sample.pl -a 1 -b 2 -c 3 OTHER ARGUMENTS
-    #WHEN: YYYYMMDD.HHMMSS
+    #WHEN: at HH:MM:SS on weekday month day, year
     #WORKDIR: /path/to/working/dir
     #SCRIPTDIR: bin (/path/to/working/dir/bin)
+    ################################################################################
+    ##################### GOTO END OF FILE FOR EXIT CODE INFO. #####################
+    ################################################################################
+    #ARCHIVERSION: 0.7.0
     #PERLVERSION: v5.18.2
     #PERLPATH: /path/to/bin/perl
     #PERLINC: /path/to/perl/lib:/path/to/another/perl/lib:.
     #ENV: PATH:/usr/local/bin:/paths/to/more/bins
+    ...
     #ENV: _system_name:OSX
     #ENV: _system_version:10.9
-    ...
+    ################################################################################
+    ###### IF EXIT CODE IS MISSING, SCRIPT WAS CANCELLED OR IS STILL RUNNING! ######
+    ################## TYPICALLY: 0 == SUCCESS AND 255 == FAILURE ##################
+    ################################################################################
+    #EXITCODE: 0
+    #FINISHED: at HH:MM:SS on weekday month day, year
+    #ELAPSED: HH:MM:SS
 
 ### Reproducing an Archived Analysis
 
@@ -199,3 +214,4 @@ Some features I might add are:
 - Verbose mode
     - Print to screen the parameters used when reproducing an archived run
 - Standalone script that can be used upstream of any command line functions
+- Python version
