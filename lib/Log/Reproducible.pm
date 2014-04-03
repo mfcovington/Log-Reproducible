@@ -4,7 +4,7 @@ use warnings;
 use Cwd;
 use File::Path 'make_path';
 use File::Basename;
-use POSIX qw(strftime);
+use POSIX qw(strftime difftime);
 use Config;
 
 # TODO: Add verbose (or silent) option
@@ -44,7 +44,7 @@ sub reproduce {
     make_path $dir;
 
     my ( $prog, $prog_dir, $cmd, $note ) = _parse_command();
-    my ( $repro_file, $now ) = _set_repro_file( $dir, $prog );
+    my ( $repro_file, $start ) = _set_repro_file( $dir, $prog );
     my $old_repro_file;
 
     my $warnings = [];
@@ -53,9 +53,9 @@ sub reproduce {
         $cmd = _reproduce_cmd( $prog, $prog_dir, $old_repro_file, $repro_file,
             $warnings );
     }
-    _archive_cmd( $cmd, $old_repro_file, $repro_file, $note, $prog_dir, $now,
-        $warnings );
-    _exit_code($repro_file);
+    _archive_cmd( $cmd, $old_repro_file, $repro_file, $note, $prog_dir,
+        $start, $warnings );
+    _exit_code( $repro_file, $start );
 }
 
 sub _set_dir {
@@ -100,9 +100,16 @@ sub _get_repro_arg {
 
 sub _set_repro_file {
     my ( $dir, $prog ) = @_;
-    my $now = strftime "%Y%m%d.%H%M%S", localtime;
-    my $repro_file = "$dir/rlog-$prog-$now";
-    return $repro_file, $now;
+    my $start = _now();
+    my $repro_file = "$dir/rlog-$prog-" . $$start{'timestamp'};
+    return $repro_file, $start;
+}
+
+sub _now {
+    my %now;
+    $now{'timestamp'} = strftime "%Y%m%d.%H%M%S", localtime;
+    $now{'seconds'} = time();
+    return \%now;
 }
 
 sub _reproduce_cmd {
@@ -132,7 +139,7 @@ sub _reproduce_cmd {
 }
 
 sub _archive_cmd {
-    my ( $cmd, $old_repro_file, $repro_file, $note, $prog_dir, $now,
+    my ( $cmd, $old_repro_file, $repro_file, $note, $prog_dir, $start,
         $warnings )
         = @_;
     my $error_summary = join "\n", @$warnings;
@@ -148,7 +155,7 @@ sub _archive_cmd {
     _add_archive_comment( "NOTE",          $note,           $repro_fh );
     _add_archive_comment( "REPRODUCED",    $old_repro_file, $repro_fh );
     _add_archive_comment( "REPROWARNING",  $error_summary,  $repro_fh );
-    _add_archive_comment( "WHEN",          $now,            $repro_fh );
+    _add_archive_comment( "STARTED",       $$start{'timestamp'}, $repro_fh );
     _add_archive_comment( "WORKDIR",       $cwd,            $repro_fh );
     _add_archive_comment( "SCRIPTDIR",     $script_dir,      $repro_fh );
     _add_divider($repro_fh);
@@ -341,14 +348,31 @@ sub _do_or_die {
 }
 
 sub _exit_code {
-    our $repro_file = shift;
+    our ( $repro_file, $start ) = @_;
+
     END {
         return unless defined $repro_file;
+        my $finish = _now();
+        my $elapsed = _elapsed( $start, $finish );
         open my $repro_fh, ">>", $repro_file
             or die "Cannot open $repro_file for appending: $!";
-        print $repro_fh "$?\n";
+        print $repro_fh "$?\n";    # This completes EXITCODE line
+        _add_archive_comment( "FINISHED", $$finish{'timestamp'}, $repro_fh );
+        _add_archive_comment( "ELAPSED", $elapsed, $repro_fh );
         close $repro_fh;
     }
+}
+
+sub _elapsed {
+    my ( $start, $finish ) = @_;
+
+    my $secs = difftime $$finish{'seconds'}, $$start{'seconds'};
+    my $mins = int $secs / 60;
+    $secs = $secs % 60;
+    my $hours = int $mins / 60;
+    $mins = $mins % 60;
+
+    return join ":", map { sprintf "%02d", $_ } $hours, $mins, $secs;
 }
 
 1;
