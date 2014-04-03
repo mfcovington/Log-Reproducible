@@ -4,7 +4,7 @@ use warnings;
 use Cwd;
 use File::Path 'make_path';
 use File::Basename;
-use POSIX qw(strftime);
+use POSIX qw(strftime difftime);
 use Config;
 
 # TODO: Add verbose (or silent) option
@@ -12,7 +12,7 @@ use Config;
 # TODO: Allow customizion of --repronote/--reprodir/--reproduce upon import (to avoid conflicts or just shorten)
 # TODO: Auto-build README using POD
 
-our $VERSION = '0.6.0';
+our $VERSION = '0.7.0';
 
 =head1 NAME
 
@@ -44,7 +44,7 @@ sub reproduce {
     make_path $dir;
 
     my ( $prog, $prog_dir, $cmd, $note ) = _parse_command();
-    my ( $repro_file, $now ) = _set_repro_file( $dir, $prog );
+    my ( $repro_file, $start ) = _set_repro_file( $dir, $prog );
     my $old_repro_file;
 
     my $warnings = [];
@@ -53,8 +53,9 @@ sub reproduce {
         $cmd = _reproduce_cmd( $prog, $prog_dir, $old_repro_file, $repro_file,
             $warnings );
     }
-    _archive_cmd( $cmd, $old_repro_file, $repro_file, $note, $prog_dir, $now,
-        $warnings );
+    _archive_cmd( $cmd, $old_repro_file, $repro_file, $note, $prog_dir,
+        $start, $warnings );
+    _exit_code( $repro_file, $start );
 }
 
 sub _set_dir {
@@ -99,9 +100,18 @@ sub _get_repro_arg {
 
 sub _set_repro_file {
     my ( $dir, $prog ) = @_;
-    my $now = strftime "%Y%m%d.%H%M%S", localtime;
-    my $repro_file = "$dir/rlog-$prog-$now";
-    return $repro_file, $now;
+    my $start = _now();
+    my $repro_file = "$dir/rlog-$prog-" . $$start{'timestamp'};
+    return $repro_file, $start;
+}
+
+sub _now {
+    my %now;
+    my @localtime = localtime;
+    $now{'timestamp'} = strftime "%Y%m%d.%H%M%S", @localtime;
+    $now{'when'} = strftime "at %X on %a %b %d, %Y", @localtime;
+    $now{'seconds'} = time();
+    return \%now;
 }
 
 sub _reproduce_cmd {
@@ -131,16 +141,14 @@ sub _reproduce_cmd {
 }
 
 sub _archive_cmd {
-    my ( $cmd, $old_repro_file, $repro_file, $note, $prog_dir, $now,
+    my ( $cmd, $old_repro_file, $repro_file, $note, $prog_dir, $start,
         $warnings )
         = @_;
     my $error_summary = join "\n", @$warnings;
     my ( $gitcommit, $gitstatus, $gitdiff_cached, $gitdiff )
         = _git_info($prog_dir);
     my ( $perl_path, $perl_version, $perl_inc ) = _perl_info();
-    my $cwd = cwd;
-    my $full_prog_dir = $prog_dir eq "./" ? $cwd : "$cwd/$prog_dir";
-    $full_prog_dir = "$prog_dir ($full_prog_dir)";
+    my ( $cwd, $script_dir ) = _dir_info($prog_dir);
     my $env_summary = _env_info();
 
     open my $repro_fh, ">", $repro_file
@@ -149,11 +157,11 @@ sub _archive_cmd {
     _add_archive_comment( "NOTE",          $note,           $repro_fh );
     _add_archive_comment( "REPRODUCED",    $old_repro_file, $repro_fh );
     _add_archive_comment( "REPROWARNING",  $error_summary,  $repro_fh );
-    print $repro_fh "#" x 80, "\n";
-    _add_archive_comment( "ARCHIVERSION",  $VERSION,        $repro_fh );
-    _add_archive_comment( "WHEN",          $now,            $repro_fh );
+    _add_archive_comment( "STARTED",       $$start{'when'}, $repro_fh );
     _add_archive_comment( "WORKDIR",       $cwd,            $repro_fh );
-    _add_archive_comment( "SCRIPTDIR",     $full_prog_dir,  $repro_fh );
+    _add_archive_comment( "SCRIPTDIR",     $script_dir,     $repro_fh );
+    _add_divider($repro_fh);
+    _add_archive_comment( "ARCHIVERSION",  $VERSION,        $repro_fh );
     _add_archive_comment( "PERLVERSION",   $perl_version,   $repro_fh );
     _add_archive_comment( "PERLPATH",      $perl_path,      $repro_fh );
     _add_archive_comment( "PERLINC",       $perl_inc,       $repro_fh );
@@ -162,6 +170,7 @@ sub _archive_cmd {
     _add_archive_comment( "GITDIFFSTAGED", $gitdiff_cached, $repro_fh );
     _add_archive_comment( "GITDIFF",       $gitdiff,        $repro_fh );
     _add_archive_comment( "ENV",           $env_summary,    $repro_fh );
+    _add_exit_code_preamble($repro_fh);
     close $repro_fh;
     print STDERR "Created new archive: $repro_file\n";
 }
@@ -189,6 +198,26 @@ sub _perl_info {
     return $perl_path, $perl_version, $perl_inc;
 }
 
+sub _dir_info {
+    my $prog_dir = shift;
+
+    my $cwd = cwd;
+    my $absolute_prog_dir;
+
+    if ( $prog_dir eq "./" ) {
+        $absolute_prog_dir = $cwd;
+    }
+    elsif ( $prog_dir =~ /^\// ) {
+        $absolute_prog_dir = $prog_dir;
+    }
+    else {
+        $absolute_prog_dir = "$cwd/$prog_dir";
+    }
+    my $script_dir = "$prog_dir ($absolute_prog_dir)";
+
+    return $cwd, $script_dir;
+}
+
 sub _env_info {
     return join "\n", map {"$_:$ENV{$_}"} sort keys %ENV;
 }
@@ -199,6 +228,22 @@ sub _add_archive_comment {
         my @comment_lines = split /\n/, $comment;
         print $repro_fh "#$title: $_\n" for @comment_lines;
     }
+}
+
+sub _add_divider {
+    my $repro_fh = shift;
+    print $repro_fh "#" x 80, "\n";
+    print $repro_fh "#" x 21, " GOTO END OF FILE FOR EXIT CODE INFO. ", "#" x 21, "\n";
+    print $repro_fh "#" x 80, "\n";
+}
+
+sub _add_exit_code_preamble {
+    my $repro_fh = shift;
+    print $repro_fh "#" x 80, "\n";
+    print $repro_fh "#" x 6, " IF EXIT CODE IS MISSING, SCRIPT WAS CANCELLED OR IS STILL RUNNING! ", "#" x 6, "\n";
+    print $repro_fh "#" x 18, " TYPICALLY: 0 == SUCCESS AND 255 == FAILURE ", "#" x 18, "\n";
+    print $repro_fh "#" x 80, "\n";
+    print $repro_fh "#EXITCODE: ";
 }
 
 sub _validate_prog_name {
@@ -302,6 +347,34 @@ sub _do_or_die {
         exit;
     }
     else { _do_or_die(); }
+}
+
+sub _exit_code {
+    our ( $repro_file, $start ) = @_;
+
+    END {
+        return unless defined $repro_file;
+        my $finish = _now();
+        my $elapsed = _elapsed( $start, $finish );
+        open my $repro_fh, ">>", $repro_file
+            or die "Cannot open $repro_file for appending: $!";
+        print $repro_fh "$?\n";    # This completes EXITCODE line
+        _add_archive_comment( "FINISHED", $$finish{'when'}, $repro_fh );
+        _add_archive_comment( "ELAPSED", $elapsed, $repro_fh );
+        close $repro_fh;
+    }
+}
+
+sub _elapsed {
+    my ( $start, $finish ) = @_;
+
+    my $secs = difftime $$finish{'seconds'}, $$start{'seconds'};
+    my $mins = int $secs / 60;
+    $secs = $secs % 60;
+    my $hours = int $mins / 60;
+    $mins = $mins % 60;
+
+    return join ":", map { sprintf "%02d", $_ } $hours, $mins, $secs;
 }
 
 1;

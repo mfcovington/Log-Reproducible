@@ -2,15 +2,18 @@
 use strict;
 use warnings FATAL => 'all';
 use Module::Build;
-use Pod::Markdown;
 
 # TODO: Add version specifications for requirements
 # TODO: Add perl + version to requirements
 
 my $module_file = "lib/Log/Reproducible.pm";
-my $readme_file = "future-README.md";
 
-pod2markdown( $module_file, $readme_file );
+eval "use Pod::Markdown";
+if ( ! $@ ) {
+    require Pod::Markdown;
+    my $readme_file = "future-README.md";
+    pod2markdown( $module_file, $readme_file );
+}
 
 my $builder = Module::Build->new(
     module_name        => 'Log::Reproducible',
@@ -29,7 +32,9 @@ my $builder = Module::Build->new(
     },
     configure_requires => {
         'Module::Build' => 0,
-        'Pod::Markdown' => 0,
+    },
+    recommends => {
+        'Pod::Markdown' => 0,    # To auto-generate README from POD markup
     },
 );
 

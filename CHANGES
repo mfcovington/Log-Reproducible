@@ -1,0 +1,58 @@
+Revision history for Perl module Log::Reproducible
+
+0.7.0 2014-04-02
+
+  - Archive Exit Code, Finished Date/Time, and Elapsed Time
+  - Auto-generate README from POD only if Pod::Markdown is installed
+  - Move and reformat divider line in archive
+  - Fix script path
+
+0.6.0 2014-03-30
+
+  - Implement use of Module::Build
+  - Archive Log::Reproducible version
+
+0.5.1 2014-03-29
+
+  - Archive environmental variables (%ENV)
+  - Make compatible with Perl v5.8.X
+
+0.5.0 2014-03-28
+
+  - Prompt user to continue if inconsistencies found when reproducing
+  - Add warnings to new archive
+
+0.4.1 2014-03-25
+
+  - Update README with Perl-related info and comparisons
+
+0.4.0 2014-03-25
+
+  - Add Perl info to archive
+  - Compare archived vs current Perl/git info
+
+0.3.0 2014-03-24
+
+  - Archive/reproduce at import
+
+0.2.1 2014-03-21
+
+  - Update README
+
+0.2.0 2014-03-21
+
+  [Add archive comments]
+    - Custom Note
+    - Date/Time
+    - Working/Script Directories
+    - Git Repo Info
+
+0.1.1 2014-03-11
+
+  - Add tests
+  - Fix issue when CLI option is multiple words surrounded by quotes
+
+0.1.0 2014-03-07
+
+  - Easily archive and reproduce Perl-based analyses
+
