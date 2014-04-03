@@ -1,5 +1,9 @@
 Revision history for Perl module Log::Reproducible
 
+0.7.1 2014-04-02
+
+  - Update README to include new features
+
 0.7.0 2014-04-02
 
   - Archive Exit Code, Finished Date/Time, and Elapsed Time
