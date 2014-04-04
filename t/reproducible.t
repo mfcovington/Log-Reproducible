@@ -18,6 +18,7 @@ BEGIN {
     require_ok('Log::Reproducible')
         or BAIL_OUT "Can't load Log::Reproducible";
 }
+my $cwd = getcwd;
 
 my @got;
 my $expected = [
@@ -40,21 +41,48 @@ my $archive = get_recent_archive($archive_dir);
 is_deeply( \@got, $expected, 'Run an archived Perl script' );
 
 subtest '_set_dir tests' => sub {
-    plan tests => 3;
+    plan tests => 4;
 
     my $original_REPRO_DIR = $ENV{REPRO_DIR};
     undef $ENV{REPRO_DIR};
 
-    my $cwd = getcwd;
-    is( Log::Reproducible::_set_dir(), "$cwd/repro-archive", "default _set_dir()");
+    my $test_params = {};
+    $test_params = {
+        name     => "default _set_dir()",
+        dir      => undef,
+        args     => undef,
+        expected => "$cwd/repro-archive",
+    };
+    test_set_dir($test_params);
+
+    my $custom_dir = "custom-dir";
+    $test_params = {
+        name     => "_set_dir('$custom_dir')",
+        dir      => $custom_dir,
+        args     => undef,
+        expected => $custom_dir,
+    };
+    test_set_dir($test_params);
+
+    my $cli_dir = "cli-dir";
+    $test_params = {
+        name     => "_set_dir() using '--reprodir $cli_dir' on CLI",
+        dir      => undef,
+        args     => [ '--reprodir', $cli_dir ],
+        expected => $cli_dir,
+    };
+    test_set_dir($test_params);
 
     my $env_dir = "env-dir";
     $ENV{REPRO_DIR} = $env_dir;
-    is( Log::Reproducible::_set_dir(), $env_dir, "_set_dir() using REPRO_DIR environmental variable ('$env_dir')");
-
-    my $custom_dir = "custom-dir";
-    is( Log::Reproducible::_set_dir($custom_dir), $custom_dir, "_set_dir('$custom_dir')");
-
+    $test_params = {
+        name =>
+            "_set_dir() using REPRO_DIR environmental variable ('$env_dir')",
+        dir      => undef,
+        args     => undef,
+        expected => $env_dir,
+    };
+    test_set_dir($test_params);
     $ENV{REPRO_DIR} = $original_REPRO_DIR;
 };
 
@@ -64,4 +92,12 @@ sub get_recent_archive {
     my @archives = grep { /^rlog-$script/ && -f "$archive_dir/$_" } readdir($dh);
     closedir $dh;
     return pop @archives;
+}
+
+sub test_set_dir {
+    my $test_params = shift;
+    Log::Reproducible::_set_dir( \$$test_params{'dir'},
+        $$test_params{'args'} );
+    is( $$test_params{'dir'}, $$test_params{'expected'},
+        $$test_params{'name'} );
 }
