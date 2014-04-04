@@ -41,7 +41,7 @@ sub _first_index (&@) {    # From v0.33 of the wonderful List::MoreUtils
 sub reproduce {
     my $dir = shift;
     my $argv_current = \@ARGV;
-    $dir = _set_dir( $dir, $argv_current );
+    _set_dir( \$dir, $argv_current );
     make_path $dir;
 
     my $current = {};
@@ -79,18 +79,17 @@ sub _set_dir {
     my $cli_dir = _get_repro_arg("reprodir", $argv_current);
 
     if ( defined $cli_dir ) {
-        $dir = $cli_dir;
+        $$dir = $cli_dir;
     }
-    elsif ( !defined $dir ) {
+    elsif ( !defined $$dir ) {
         if ( defined $ENV{REPRO_DIR} ) {
-            $dir = $ENV{REPRO_DIR};
+            $$dir = $ENV{REPRO_DIR};
         }
         else {
             my $cwd = getcwd;
-            $dir = "$cwd/repro-archive";
+            $$dir = "$cwd/repro-archive";
         }
     }
-    return $dir;
 }
 
 sub _parse_command {
