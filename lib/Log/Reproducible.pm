@@ -48,14 +48,28 @@ sub reproduce {
     my ( $repro_file, $start ) = _set_repro_file( $current, $dir, $prog );
     _get_current_state( $current, $prog_dir );
 
+    my $categories = {
+        script => [
+            'NOTE',    'REPRODUCED', 'REPROWARNING', 'STARTED',
+            'WORKDIR', 'SCRIPTDIR'
+        ],
+        system => [
+            'ARCHIVERSION', 'PERLVERSION', 'PERLPATH',      'PERLINC',
+            'GITCOMMIT',    'GITSTATUS',   'GITDIFFSTAGED', 'GITDIFF',
+            'ENV'
+        ],
+    };
     my $warnings = [];
+
     if ( $$current{'CMD'} =~ /\s-?-reproduce\s+(\S+)/ ) {
         my $old_repro_file = $1;
         $$current{'REPRODUCED'} = $old_repro_file;
-        $$current{'CMD'} = _reproduce_cmd( $current, $prog, $prog_dir, $old_repro_file, $repro_file,
-            $warnings );
+        $$current{'CMD'}
+            = _reproduce_cmd( $current, $prog, $prog_dir, $old_repro_file,
+            $repro_file, $categories, $warnings );
     }
-    _archive_cmd( $current, $repro_file, $prog_dir, $start, $warnings );
+    _archive_cmd( $current, $repro_file, $prog_dir, $start, $categories,
+        $warnings );
     _exit_code( $repro_file, $start );
 }
 
@@ -118,7 +132,8 @@ sub _now {
 }
 
 sub _reproduce_cmd {
-    my ( $current, $prog, $prog_dir, $old_repro_file, $repro_file, $warnings )
+    my ( $current, $prog, $prog_dir, $old_repro_file, $repro_file,
+        $categories, $warnings )
         = @_;
 
     open my $old_repro_fh, "<", $old_repro_file
@@ -134,13 +149,14 @@ sub _reproduce_cmd {
     print STDERR "Reproducing archive: $old_repro_file\n";
     print STDERR "Reproducing command: $cmd\n";
     _validate_prog_name( $archived_prog, $prog, @args );
-    _validate_archived_info( \@archive, $current, $warnings );
+    _validate_archived_info( \@archive, $current, $categories, $warnings );
     _do_or_die() if scalar @$warnings > 0;
     return $cmd;
 }
 
 sub _archive_cmd {
-    my ( $current, $repro_file, $prog_dir, $start, $warnings ) = @_;
+    my ( $current, $repro_file, $prog_dir, $start, $categories, $warnings )
+        = @_;
     my $error_summary = join "\n", @$warnings;
 
     open my $repro_fh, ">", $repro_file
@@ -148,10 +164,10 @@ sub _archive_cmd {
     print $repro_fh $$current{'CMD'}, "\n";
 
     _add_archive_comment( $_, $$current{$_}, $repro_fh )
-        for qw(NOTE REPRODUCED REPROWARNING STARTED WORKDIR SCRIPTDIR);
+        for @{ $$categories{'script'} };
     _add_divider($repro_fh);
     _add_archive_comment( $_, $$current{$_}, $repro_fh )
-        for qw(ARCHIVERSION PERLVERSION PERLPATH PERLINC GITCOMMIT GITSTATUS GITDIFFSTAGED GITDIFF ENV);
+        for @{ $$categories{'system'} };
     _add_exit_code_preamble($repro_fh);
     close $repro_fh;
     print STDERR "Created new archive: $repro_file\n";
@@ -274,9 +290,9 @@ EOF
 }
 
 sub _validate_archived_info {
-    my ( $archive_lines, $current, $warnings ) = @_;
+    my ( $archive_lines, $current, $categories, $warnings ) = @_;
 
-    for (qw(ARCHIVERSION PERLPATH PERLVERSION PERLINC GITCOMMIT GITSTATUS GITDIFFSTAGED GITDIFF ENV)) {
+    for ( @{ $$categories{'system'} } ) {
         my ($archived) = _extract_from_archive( $archive_lines, $_ );
         _compare_archive_current( $archived, $current, $_, $warnings );
     }
