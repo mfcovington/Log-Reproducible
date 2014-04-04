@@ -6,7 +6,7 @@
 #
 use strict;
 use warnings;
-use Test::More tests => 7;
+use Test::More tests => 8;
 use FindBin qw($Bin);
 use lib "$Bin/../lib";
 use Cwd;
@@ -151,6 +151,23 @@ subtest '_parse_command tests' => sub {
     is( $$current{'NOTE'}, "test note", "Repro note" );
     is( $$current{'CMD'}, "$prog -a 1 -b 'a test' some arguments",
         "Full command" );
+};
+
+subtest '_divider_message tests' => sub {
+    plan tests => 4;
+
+    my $message;
+    $message = Log::Reproducible::_divider_message("X" x 18);
+    is($message, join (" ", "#" x 30, "X" x 18, "#" x 30) . "\n", 'Even length message');
+
+    $message = Log::Reproducible::_divider_message("X" x 19);
+    is($message, join (" ", "#" x 30, "X" x 19, "#" x 29) . "\n", 'Odd length message');
+
+    $message = Log::Reproducible::_divider_message();
+    is($message, "#" x 80 . "\n", 'Divider line only, no message');
+
+    $message = Log::Reproducible::_divider_message("X" x 100);
+    is($message, "X" x 100 . "\n", 'Message longer than width (80)');
 };
 
 exit;
