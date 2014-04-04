@@ -125,9 +125,9 @@ sub _set_repro_file {
 sub _now {
     my %now;
     my @localtime = localtime;
-    $now{'timestamp'} = strftime "%Y%m%d.%H%M%S", @localtime;
-    $now{'when'} = strftime "at %X on %a %b %d, %Y", @localtime;
-    $now{'seconds'} = time();
+    $now{'timestamp'} = strftime "%Y%m%d.%H%M%S",         @localtime;
+    $now{'when'}      = strftime "at %X on %a %b %d, %Y", @localtime;
+    $now{'seconds'}   = time();
     return \%now;
 }
 
@@ -226,7 +226,7 @@ sub _dir_info {
     }
     my $script_dir = "$prog_dir ($absolute_prog_dir)";
 
-    $$current{'WORKDIR'} = $cwd;
+    $$current{'WORKDIR'}   = $cwd;
     $$current{'SCRIPTDIR'} = $script_dir;
 }
 
@@ -267,7 +267,8 @@ sub _divider_message {
     if ( defined $message ) {
         my $msg_len = length($message) + 2;
         my $pad     = ( $width - $msg_len ) / 2;
-        $message = $pad > 0
+        $message
+            = $pad > 0
             ? join " ", "#" x ceil($pad), $message, "#" x floor($pad)
             : $message;
     }
@@ -279,7 +280,7 @@ sub _divider_message {
 
 sub _validate_prog_name {
     my ( $archived_prog, $prog, @args ) = @_;
-    local $SIG{__DIE__} = sub {warn @_; exit 1};
+    local $SIG{__DIE__} = sub { warn @_; exit 1 };
     die <<EOF if $archived_prog ne $prog;
 Current ($prog) and archived ($archived_prog) program names don't match!
 If this was expected (e.g., filename was changed), please re-run as:
@@ -301,7 +302,7 @@ sub _validate_archived_info {
 sub _extract_from_archive {
     my ( $archive_lines, $key ) = @_;
 
-    my @values = grep { /#$key: / } @$archive_lines;
+    my @values = grep {/#$key: /} @$archive_lines;
     $_ =~ s/#$key: // for @values;
 
     return join "\n", @values;
@@ -348,7 +349,7 @@ sub _exit_code {
             or die "Cannot open $repro_file for appending: $!";
         print $repro_fh "$?\n";    # This completes EXITCODE line
         _add_archive_comment( "FINISHED", $$finish{'when'}, $repro_fh );
-        _add_archive_comment( "ELAPSED", $elapsed, $repro_fh );
+        _add_archive_comment( "ELAPSED",  $elapsed,         $repro_fh );
         close $repro_fh;
     }
 }
