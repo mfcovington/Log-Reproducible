@@ -6,7 +6,7 @@
 #
 use strict;
 use warnings;
-use Test::More tests => 6;
+use Test::More tests => 7;
 use FindBin qw($Bin);
 use lib "$Bin/../lib";
 use Cwd;
@@ -39,6 +39,30 @@ sleep 1;
 my $archive = get_recent_archive($archive_dir);
 @got = `$cmd --reproduce $archive_dir/$archive 2> /dev/null`;
 is_deeply( \@got, $expected, 'Run an archived Perl script' );
+
+subtest 'Time tests' => sub {
+    plan tests => 4;
+
+    my $now = Log::Reproducible::_now();
+
+    like(
+        $$now{'timestamp'},
+        qr/2\d{3}[01][0-9][0-3][0-9]\.[01][0-9][0-6][0-9][0-6][0-9]/,
+        "Test timestamp"
+    );
+    like(
+        $$now{'when'},
+        qr/at [01][0-9]:[0-6][0-9]:[0-6][0-9] on \w{3} \w{3} [0-3][0-9], 2\d{3}/,
+        "Test 'at time on date'"
+    );
+    like( $$now{'seconds'}, qr/\d+/, "Test seconds" );
+
+    my $start_seconds  = 1000000;
+    my $finish_seconds = 3356330;
+    my $elapsed
+        = Log::Reproducible::_elapsed( $start_seconds, $finish_seconds );
+    is( $elapsed, '654:32:10', 'Test elapsed time' );
+};
 
 subtest '_set_dir tests' => sub {
     plan tests => 4;
