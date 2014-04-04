@@ -40,11 +40,12 @@ sub _first_index (&@) {    # From v0.33 of the wonderful List::MoreUtils
 
 sub reproduce {
     my $dir = shift;
-    $dir = _set_dir($dir);
+    my $argv_current = \@ARGV;
+    $dir = _set_dir( $dir, $argv_current );
     make_path $dir;
 
     my $current = {};
-    my ( $prog, $prog_dir ) = _parse_command($current);
+    my ( $prog, $prog_dir ) = _parse_command( $current, $argv_current );
     my ( $repro_file, $start ) = _set_repro_file( $current, $dir, $prog );
     _get_current_state( $current, $prog_dir );
 
@@ -66,7 +67,7 @@ sub reproduce {
         $$current{'REPRODUCED'} = $old_repro_file;
         $$current{'CMD'}
             = _reproduce_cmd( $current, $prog, $prog_dir, $old_repro_file,
-            $repro_file, $categories, $warnings );
+            $repro_file, $argv_current, $categories, $warnings );
     }
     _archive_cmd( $current, $repro_file, $prog_dir, $start, $categories,
         $warnings );
@@ -74,8 +75,8 @@ sub reproduce {
 }
 
 sub _set_dir {
-    my $dir     = shift;
-    my $cli_dir = _get_repro_arg("reprodir");
+    my ( $dir, $argv_current ) = @_;
+    my $cli_dir = _get_repro_arg("reprodir", $argv_current);
 
     if ( defined $cli_dir ) {
         $dir = $cli_dir;
@@ -93,23 +94,23 @@ sub _set_dir {
 }
 
 sub _parse_command {
-    my $current = shift;
-    $$current{'NOTE'} = _get_repro_arg("repronote");
-    for (@ARGV) {
+    my ( $current, $argv_current ) = @_;
+    $$current{'NOTE'} = _get_repro_arg( "repronote", $argv_current );
+    for (@$argv_current) {
         $_ = "'$_'" if /\s/;
     }
     my ( $prog, $prog_dir ) = fileparse $0;
-    $$current{'CMD'} = join " ", $prog, @ARGV;
+    $$current{'CMD'} = join " ", $prog, @$argv_current;
     return $prog, $prog_dir;
 }
 
 sub _get_repro_arg {
-    my $repro_arg = shift;
+    my ( $repro_arg, $argv_current ) = @_;
     my $arg;
-    my $arg_idx = _first_index { $_ =~ /^-?-$repro_arg$/ } @ARGV;
+    my $arg_idx = _first_index { $_ =~ /^-?-$repro_arg$/ } @$argv_current;
     if ( $arg_idx > -1 ) {
-        $arg = $ARGV[ $arg_idx + 1 ];
-        splice @ARGV, $arg_idx, 2;
+        $arg = $$argv_current[ $arg_idx + 1 ];
+        splice @$argv_current, $arg_idx, 2;
     }
     return $arg;
 }
@@ -133,7 +134,7 @@ sub _now {
 
 sub _reproduce_cmd {
     my ( $current, $prog, $prog_dir, $old_repro_file, $repro_file,
-        $categories, $warnings )
+        $argv_current, $categories, $warnings )
         = @_;
 
     open my $old_repro_fh, "<", $old_repro_file
@@ -143,12 +144,12 @@ sub _reproduce_cmd {
     close $old_repro_fh;
 
     my $cmd = $archive[0];
-    my ( $archived_prog, @args )
+    my ( $archived_prog, @archived_argv )
         = $cmd =~ /((?:\'[^']+\')|(?:\"[^"]+\")|(?:\S+))/g;
-    @ARGV = @args;
+    @$argv_current = @archived_argv;
     print STDERR "Reproducing archive: $old_repro_file\n";
     print STDERR "Reproducing command: $cmd\n";
-    _validate_prog_name( $archived_prog, $prog, @args );
+    _validate_prog_name( $archived_prog, $prog, @archived_argv );
     _validate_archived_info( \@archive, $current, $categories, $warnings );
     _do_or_die() if scalar @$warnings > 0;
     return $cmd;
