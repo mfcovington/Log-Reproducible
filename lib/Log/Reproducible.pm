@@ -43,18 +43,19 @@ sub reproduce {
     $dir = _set_dir($dir);
     make_path $dir;
 
-    my ( $prog, $prog_dir, $cmd, $note ) = _parse_command();
-    my ( $repro_file, $start ) = _set_repro_file( $dir, $prog );
-    my $old_repro_file;
+    my $current = {};
+    my ( $prog, $prog_dir ) = _parse_command($current);
+    my ( $repro_file, $start ) = _set_repro_file( $current, $dir, $prog );
+    _get_current_state( $current, $prog_dir );
 
     my $warnings = [];
-    if ( $cmd =~ /\s-?-reproduce\s+(\S+)/ ) {
-        $old_repro_file = $1;
-        $cmd = _reproduce_cmd( $prog, $prog_dir, $old_repro_file, $repro_file,
+    if ( $$current{'CMD'} =~ /\s-?-reproduce\s+(\S+)/ ) {
+        my $old_repro_file = $1;
+        $$current{'REPRODUCED'} = $old_repro_file;
+        $$current{'CMD'} = _reproduce_cmd( $current, $prog, $prog_dir, $old_repro_file, $repro_file,
             $warnings );
     }
-    _archive_cmd( $cmd, $old_repro_file, $repro_file, $note, $prog_dir,
-        $start, $warnings );
+    _archive_cmd( $current, $repro_file, $prog_dir, $start, $warnings );
     _exit_code( $repro_file, $start );
 }
 
@@ -78,13 +79,14 @@ sub _set_dir {
 }
 
 sub _parse_command {
-    my $note = _get_repro_arg("repronote");
+    my $current = shift;
+    $$current{'NOTE'} = _get_repro_arg("repronote");
     for (@ARGV) {
         $_ = "'$_'" if /\s/;
     }
     my ( $prog, $prog_dir ) = fileparse $0;
-    my $cmd = join " ", $prog, @ARGV;
-    return $prog, $prog_dir, $cmd, $note;
+    $$current{'CMD'} = join " ", $prog, @ARGV;
+    return $prog, $prog_dir;
 }
 
 sub _get_repro_arg {
@@ -99,8 +101,9 @@ sub _get_repro_arg {
 }
 
 sub _set_repro_file {
-    my ( $dir, $prog ) = @_;
+    my ( $current, $dir, $prog ) = @_;
     my $start = _now();
+    $$current{'STARTED'} = $$start{'when'};
     my $repro_file = "$dir/rlog-$prog-" . $$start{'timestamp'};
     return $repro_file, $start;
 }
@@ -115,12 +118,11 @@ sub _now {
 }
 
 sub _reproduce_cmd {
-    my ( $prog, $prog_dir, $old_repro_file, $repro_file, $warnings ) = @_;
+    my ( $current, $prog, $prog_dir, $old_repro_file, $repro_file, $warnings )
+        = @_;
 
-    die "Reproducible archive file ($old_repro_file) does not exists.\n"
-        unless -e $old_repro_file;
     open my $old_repro_fh, "<", $old_repro_file
-        or die "Cannot open $old_repro_file for reading: $!";
+        or die "Cannot open $old_repro_file for reading: $!\n";
     my @archive = <$old_repro_fh>;
     chomp @archive;
     close $old_repro_fh;
@@ -132,74 +134,67 @@ sub _reproduce_cmd {
     print STDERR "Reproducing archive: $old_repro_file\n";
     print STDERR "Reproducing command: $cmd\n";
     _validate_prog_name( $archived_prog, $prog, @args );
-    _validate_archive_version( \@archive, $warnings );
-    _validate_perl_info( \@archive, $warnings );
-    _validate_git_info( \@archive, $prog_dir, $warnings );
-    _validate_env_info( \@archive, $warnings );
+    _validate_archived_info( \@archive, $current, $warnings );
     _do_or_die() if scalar @$warnings > 0;
     return $cmd;
 }
 
 sub _archive_cmd {
-    my ( $cmd, $old_repro_file, $repro_file, $note, $prog_dir, $start,
-        $warnings )
-        = @_;
+    my ( $current, $repro_file, $prog_dir, $start, $warnings ) = @_;
     my $error_summary = join "\n", @$warnings;
-    my ( $gitcommit, $gitstatus, $gitdiff_cached, $gitdiff )
-        = _git_info($prog_dir);
-    my ( $perl_path, $perl_version, $perl_inc ) = _perl_info();
-    my ( $cwd, $script_dir ) = _dir_info($prog_dir);
-    my $env_summary = _env_info();
 
     open my $repro_fh, ">", $repro_file
         or die "Cannot open $repro_file for writing: $!";
-    print $repro_fh "$cmd\n";
-    _add_archive_comment( "NOTE",          $note,           $repro_fh );
-    _add_archive_comment( "REPRODUCED",    $old_repro_file, $repro_fh );
-    _add_archive_comment( "REPROWARNING",  $error_summary,  $repro_fh );
-    _add_archive_comment( "STARTED",       $$start{'when'}, $repro_fh );
-    _add_archive_comment( "WORKDIR",       $cwd,            $repro_fh );
-    _add_archive_comment( "SCRIPTDIR",     $script_dir,     $repro_fh );
+    print $repro_fh $$current{'CMD'}, "\n";
+
+    _add_archive_comment( $_, $$current{$_}, $repro_fh )
+        for qw(NOTE REPRODUCED REPROWARNING STARTED WORKDIR SCRIPTDIR);
     _add_divider($repro_fh);
-    _add_archive_comment( "ARCHIVERSION",  $VERSION,        $repro_fh );
-    _add_archive_comment( "PERLVERSION",   $perl_version,   $repro_fh );
-    _add_archive_comment( "PERLPATH",      $perl_path,      $repro_fh );
-    _add_archive_comment( "PERLINC",       $perl_inc,       $repro_fh );
-    _add_archive_comment( "GITCOMMIT",     $gitcommit,      $repro_fh );
-    _add_archive_comment( "GITSTATUS",     $gitstatus,      $repro_fh );
-    _add_archive_comment( "GITDIFFSTAGED", $gitdiff_cached, $repro_fh );
-    _add_archive_comment( "GITDIFF",       $gitdiff,        $repro_fh );
-    _add_archive_comment( "ENV",           $env_summary,    $repro_fh );
+    _add_archive_comment( $_, $$current{$_}, $repro_fh )
+        for qw(ARCHIVERSION PERLVERSION PERLPATH PERLINC GITCOMMIT GITSTATUS GITDIFFSTAGED GITDIFF ENV);
     _add_exit_code_preamble($repro_fh);
     close $repro_fh;
     print STDERR "Created new archive: $repro_file\n";
 }
 
+sub _get_current_state {
+    my ( $current, $prog_dir ) = @_;
+    _archive_version($current);
+    _git_info( $current, $prog_dir );
+    _perl_info($current);
+    _dir_info( $current, $prog_dir );
+    _env_info($current);
+}
+
+sub _archive_version {
+    my $current = shift;
+    $$current{'ARCHIVERSION'} = $VERSION;
+}
+
 sub _git_info {
-    my $prog_dir = shift;
+    my ( $current, $prog_dir ) = @_;
     return if `which git` eq '';
 
     my $gitbranch = `cd $prog_dir; git rev-parse --abbrev-ref HEAD 2>&1;`;
     return if $gitbranch =~ /fatal: Not a git repository/;
     chomp $gitbranch;
 
-    my $gitlog         = `cd $prog_dir; git log -n1 --oneline;`;
-    my $gitcommit      = "$gitbranch $gitlog";
-    my $gitstatus      = `cd $prog_dir; git status --short;`;
-    my $gitdiff_cached = `cd $prog_dir; git diff --cached;`;
-    my $gitdiff        = `cd $prog_dir; git diff;`;
-    return $gitcommit, $gitstatus, $gitdiff_cached, $gitdiff;
+    my $gitlog = `cd $prog_dir; git log -n1 --oneline;`;
+    $$current{'GITCOMMIT'}     = "$gitbranch $gitlog";
+    $$current{'GITSTATUS'}     = `cd $prog_dir; git status --short;`;
+    $$current{'GITDIFFSTAGED'} = `cd $prog_dir; git diff --cached;`;
+    $$current{'GITDIFF'}       = `cd $prog_dir; git diff;`;
 }
 
 sub _perl_info {
-    my $perl_path    = $Config{perlpath};
-    my $perl_version = sprintf "v%vd", $^V;
-    my $perl_inc     = join ":", @INC;
-    return $perl_path, $perl_version, $perl_inc;
+    my $current = shift;
+    $$current{'PERLPATH'}    = $Config{perlpath};
+    $$current{'PERLVERSION'} = sprintf "v%vd", $^V;
+    $$current{'PERLINC'}     = join ":", @INC;
 }
 
 sub _dir_info {
-    my $prog_dir = shift;
+    my ( $current, $prog_dir ) = @_;
 
     my $cwd = cwd;
     my $absolute_prog_dir;
@@ -215,11 +210,13 @@ sub _dir_info {
     }
     my $script_dir = "$prog_dir ($absolute_prog_dir)";
 
-    return $cwd, $script_dir;
+    $$current{'WORKDIR'} = $cwd;
+    $$current{'SCRIPTDIR'} = $script_dir;
 }
 
 sub _env_info {
-    return join "\n", map {"$_:$ENV{$_}"} sort keys %ENV;
+    my $current = shift;
+    $$current{'ENV'} = join "\n", map {"$_:$ENV{$_}"} sort keys %ENV;
 }
 
 sub _add_archive_comment {
@@ -258,58 +255,13 @@ If this was expected (e.g., filename was changed), please re-run as:
 EOF
 }
 
-sub _validate_archive_version {
-    my ( $archive_lines, $warnings ) = @_;
-    my ($archive_version)
-        = _extract_from_archive( $archive_lines, "ARCHIVERSION" );
-    _compare( $archive_version, $VERSION, "ARCHIVERSION", $warnings );
-}
+sub _validate_archived_info {
+    my ( $archive_lines, $current, $warnings ) = @_;
 
-sub _validate_perl_info {
-    my ( $archive_lines, $warnings ) = @_;
-
-    my ($archive_perl_path)
-        = _extract_from_archive( $archive_lines, "PERLPATH" );
-    my ($archive_perl_version)
-        = _extract_from_archive( $archive_lines, "PERLVERSION" );
-    my ($archive_perl_inc)
-        = _extract_from_archive( $archive_lines, "PERLINC" );
-
-    my ( $perl_path, $perl_version, $perl_inc ) = _perl_info();
-
-    _compare( $archive_perl_path, $perl_path, "PERLPATH", $warnings );
-    _compare( $archive_perl_version, $perl_version, "PERLVERSION",
-        $warnings );
-    _compare( $archive_perl_inc, $perl_inc, "PERLINC", $warnings );
-}
-
-sub _validate_git_info {
-    my ( $archive_lines, $prog_dir, $warnings ) = @_;
-
-    my ($archive_gitcommit)
-        = _extract_from_archive( $archive_lines, "GITCOMMIT" );
-    my ($archive_gitstatus)
-        = _extract_from_archive( $archive_lines, "GITSTATUS" );
-    my ($archive_gitdiff_cached)
-        = _extract_from_archive( $archive_lines, "GITDIFFSTAGED" );
-    my ($archive_gitdiff)
-        = _extract_from_archive( $archive_lines, "GITDIFF" );
-
-    my ( $gitcommit, $gitstatus, $gitdiff_cached, $gitdiff )
-        = _git_info($prog_dir);
-
-    _compare( $archive_gitcommit, $gitcommit, "GITCOMMIT", $warnings );
-    _compare( $archive_gitstatus, $gitstatus, "GITSTATUS", $warnings );
-    _compare( $archive_gitdiff_cached, $gitdiff_cached, "GITDIFFSTAGED",
-        $warnings );
-    _compare( $archive_gitdiff, $gitdiff, "GITDIFF", $warnings );
-}
-
-sub _validate_env_info {
-    my ( $archive_lines, $warnings ) = @_;
-    my ($archive_env) = _extract_from_archive( $archive_lines, "ENV" );
-    my $env = _env_info();
-    _compare( $archive_env, $env, "ENV", $warnings );
+    for (qw(ARCHIVERSION PERLPATH PERLVERSION PERLINC GITCOMMIT GITSTATUS GITDIFFSTAGED GITDIFF ENV)) {
+        my ($archived) = _extract_from_archive( $archive_lines, $_ );
+        _compare_archive_current( $archived, $current, $_, $warnings );
+    }
 }
 
 sub _extract_from_archive {
@@ -321,12 +273,14 @@ sub _extract_from_archive {
     return join "\n", @values;
 }
 
-sub _compare {
+sub _compare_archive_current {
     my ( $archived, $current, $key, $warnings ) = @_;
-    chomp $current;
+    my $current_value = $$current{$key};
+    return unless defined $current_value;
+    chomp $current_value;
     chomp $archived;
 
-    if ( $archived ne $current ) {
+    if ( $archived ne $current_value ) {
         my $warning_message = "Archived and current $key do NOT match";
         push @$warnings, $warning_message;
         print STDERR "WARNING: $warning_message\n";
