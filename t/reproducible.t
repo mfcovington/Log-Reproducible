@@ -55,7 +55,7 @@ subtest 'Time tests' => sub {
         qr/at [01][0-9]:[0-6][0-9]:[0-6][0-9] on \w{3} \w{3} [0-3][0-9], 2\d{3}/,
         "Test 'at time on date'"
     );
-    like( $$now{'seconds'}, qr/\d+/, "Test seconds" );
+    like( $$now{'seconds'}, qr/\d{10}/, "Test seconds" );
 
     my $start_seconds  = 1000000;
     my $finish_seconds = 3356330;
