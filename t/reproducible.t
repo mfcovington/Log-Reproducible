@@ -6,7 +6,7 @@
 #
 use strict;
 use warnings;
-use Test::More tests => 5;
+use Test::More tests => 6;
 use FindBin qw($Bin);
 use lib "$Bin/../lib";
 use Cwd;
@@ -84,6 +84,29 @@ subtest '_set_dir tests' => sub {
     };
     test_set_dir($test_params);
     $ENV{REPRO_DIR} = $original_REPRO_DIR;
+};
+
+subtest '_get_repro_arg tests' => sub {
+    plan tests => 3;
+
+    my $argv_current = [
+        '--repronote', 'test note',
+        '--reprodir',  '/path/to/archive',
+        '-a',          '1',
+        '-b',          'a test',
+        'some',        'arguments'
+    ];
+
+    my $arg;
+    $arg = Log::Reproducible::_get_repro_arg( "repronote", $argv_current );
+    is( $arg, 'test note', "Get note from CLI ('--repronote')" );
+    $arg = Log::Reproducible::_get_repro_arg( "reprodir", $argv_current );
+    is( $arg, '/path/to/archive', "Get directory from CLI ('--reprodir')" );
+    is_deeply(
+        $argv_current,
+        [ '-a', '1', '-b', 'a test', 'some', 'arguments' ],
+        "Leftover options/arguments"
+    );
 };
 
 subtest '_parse_command tests' => sub {
