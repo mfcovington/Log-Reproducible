@@ -40,12 +40,15 @@ sub _first_index (&@) {    # From v0.33 of the wonderful List::MoreUtils
 
 sub reproduce {
     my $dir = shift;
-    my $argv_current = \@ARGV;
+
+    my $full_prog_name = $0;
+    my $argv_current   = \@ARGV;
     _set_dir( \$dir, $argv_current );
     make_path $dir;
 
     my $current = {};
-    my ( $prog, $prog_dir ) = _parse_command( $current, $argv_current );
+    my ( $prog, $prog_dir )
+        = _parse_command( $current, $full_prog_name, $argv_current );
     my ( $repro_file, $start ) = _set_repro_file( $current, $dir, $prog );
     _get_current_state( $current, $prog_dir );
 
@@ -93,12 +96,12 @@ sub _set_dir {
 }
 
 sub _parse_command {
-    my ( $current, $argv_current ) = @_;
+    my ( $current, $full_prog_name, $argv_current ) = @_;
     $$current{'NOTE'} = _get_repro_arg( "repronote", $argv_current );
     for (@$argv_current) {
         $_ = "'$_'" if /\s/;
     }
-    my ( $prog, $prog_dir ) = fileparse $0;
+    my ( $prog, $prog_dir ) = fileparse $full_prog_name;
     $$current{'CMD'} = join " ", $prog, @$argv_current;
     return $prog, $prog_dir;
 }
@@ -344,7 +347,7 @@ sub _exit_code {
     END {
         return unless defined $repro_file;
         my $finish = _now();
-        my $elapsed = _elapsed( $start, $finish );
+        my $elapsed = _elapsed( $$start{'seconds'}, $$finish{'seconds'} );
         open my $repro_fh, ">>", $repro_file
             or die "Cannot open $repro_file for appending: $!";
         print $repro_fh "$?\n";    # This completes EXITCODE line
@@ -355,9 +358,9 @@ sub _exit_code {
 }
 
 sub _elapsed {
-    my ( $start, $finish ) = @_;
+    my ( $start_seconds, $finish_seconds ) = @_;
 
-    my $secs = difftime $$finish{'seconds'}, $$start{'seconds'};
+    my $secs = difftime $finish_seconds, $start_seconds;
     my $mins = int $secs / 60;
     $secs = $secs % 60;
     my $hours = int $mins / 60;

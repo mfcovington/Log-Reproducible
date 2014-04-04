@@ -1,6 +1,7 @@
 autobuild.sh
 Build.pl
 CHANGES
+cover.pl
 future-README.md
 MANIFEST
 README.md
