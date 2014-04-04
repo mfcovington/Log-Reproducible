@@ -3,7 +3,6 @@ Revision history for Perl module Log::Reproducible
 0.7.3 2014-04-04
 
   - Update 'Future Directions' in README
-  - Fixed bug that resulted in 'uninitialized value' warning when reproducing
 
 0.7.2 2014-04-04
 
