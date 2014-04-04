@@ -3,4 +3,5 @@ _build/
 blib/
 Build
 MYMETA.*
+cover_db/
 troubleshooting/
