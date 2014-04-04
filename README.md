@@ -207,11 +207,7 @@ perl Build.pl
 ./Build install
 ```
 
-## Future Features
+## Future Directions
 
-Some features I might add are:
-
-- Verbose mode
-    - Print to screen the parameters used when reproducing an archived run
 - Standalone script that can be used upstream of any command line functions
 - Python version
