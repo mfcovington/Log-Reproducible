@@ -4,7 +4,7 @@ use warnings;
 use Cwd;
 use File::Path 'make_path';
 use File::Basename;
-use POSIX qw(strftime difftime);
+use POSIX qw(strftime difftime ceil floor);
 use Config;
 
 # TODO: Add verbose (or silent) option
@@ -229,18 +229,36 @@ sub _add_archive_comment {
 
 sub _add_divider {
     my $repro_fh = shift;
-    print $repro_fh "#" x 80, "\n";
-    print $repro_fh "#" x 21, " GOTO END OF FILE FOR EXIT CODE INFO. ", "#" x 21, "\n";
-    print $repro_fh "#" x 80, "\n";
+    print $repro_fh _divider_message();
+    print $repro_fh _divider_message("GOTO END OF FILE FOR EXIT CODE INFO.");
+    print $repro_fh _divider_message();
 }
 
 sub _add_exit_code_preamble {
     my $repro_fh = shift;
-    print $repro_fh "#" x 80, "\n";
-    print $repro_fh "#" x 6, " IF EXIT CODE IS MISSING, SCRIPT WAS CANCELLED OR IS STILL RUNNING! ", "#" x 6, "\n";
-    print $repro_fh "#" x 18, " TYPICALLY: 0 == SUCCESS AND 255 == FAILURE ", "#" x 18, "\n";
-    print $repro_fh "#" x 80, "\n";
+    print $repro_fh _divider_message();
+    print $repro_fh _divider_message(
+        "IF EXIT CODE IS MISSING, SCRIPT WAS CANCELLED OR IS STILL RUNNING!");
+    print $repro_fh _divider_message(
+        "TYPICALLY: 0 == SUCCESS AND 255 == FAILURE");
+    print $repro_fh _divider_message();
     print $repro_fh "#EXITCODE: ";
+}
+
+sub _divider_message {
+    my $message = shift;
+    my $width   = 80;
+    if ( defined $message ) {
+        my $msg_len = length($message) + 2;
+        my $pad     = ( $width - $msg_len ) / 2;
+        $message = $pad > 0
+            ? join " ", "#" x ceil($pad), $message, "#" x floor($pad)
+            : $message;
+    }
+    else {
+        $message = "#" x $width;
+    }
+    return "$message\n";
 }
 
 sub _validate_prog_name {
