@@ -347,7 +347,7 @@ sub _exit_code {
     END {
         return unless defined $repro_file;
         my $finish = _now();
-        my $elapsed = _elapsed( $start, $finish );
+        my $elapsed = _elapsed( $$start{'seconds'}, $$finish{'seconds'} );
         open my $repro_fh, ">>", $repro_file
             or die "Cannot open $repro_file for appending: $!";
         print $repro_fh "$?\n";    # This completes EXITCODE line
@@ -358,9 +358,9 @@ sub _exit_code {
 }
 
 sub _elapsed {
-    my ( $start, $finish ) = @_;
+    my ( $start_seconds, $finish_seconds ) = @_;
 
-    my $secs = difftime $$finish{'seconds'}, $$start{'seconds'};
+    my $secs = difftime $finish_seconds, $start_seconds;
     my $mins = int $secs / 60;
     $secs = $secs % 60;
     my $hours = int $mins / 60;
