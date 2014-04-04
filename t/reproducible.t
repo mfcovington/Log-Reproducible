@@ -6,7 +6,7 @@
 #
 use strict;
 use warnings;
-use Test::More tests => 4;
+use Test::More tests => 5;
 use FindBin qw($Bin);
 use lib "$Bin/../lib";
 use Cwd;
@@ -85,6 +85,28 @@ subtest '_set_dir tests' => sub {
     test_set_dir($test_params);
     $ENV{REPRO_DIR} = $original_REPRO_DIR;
 };
+
+subtest '_parse_command tests' => sub {
+    plan tests => 4;
+
+    my $current      = {};
+    my $argv_current = [
+        '--repronote', 'test note', '-a',   '1',
+        '-b',          'a test',    'some', 'arguments'
+    ];
+    my $full_prog_name = "/path/to/script.pl";
+    my ( $prog, $prog_dir )
+        = Log::Reproducible::_parse_command( $current, $full_prog_name,
+        $argv_current );
+
+    is( $prog,             "script.pl", "Script name" );
+    is( $prog_dir,         "/path/to/", "Script directory" );
+    is( $$current{'NOTE'}, "test note", "Repro note" );
+    is( $$current{'CMD'}, "$prog -a 1 -b 'a test' some arguments",
+        "Full command" );
+};
+
+exit;
 
 sub get_recent_archive {
     my $archive_dir = shift;
