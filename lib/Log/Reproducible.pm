@@ -107,14 +107,14 @@ sub _parse_command {
 }
 
 sub _get_repro_arg {
-    my ( $repro_arg, $argv_current ) = @_;
-    my $arg;
-    my $arg_idx = _first_index { $_ =~ /^-?-$repro_arg$/ } @$argv_current;
-    if ( $arg_idx > -1 ) {
-        $arg = $$argv_current[ $arg_idx + 1 ];
-        splice @$argv_current, $arg_idx, 2;
+    my ( $repro_opt, $argv_current ) = @_;
+    my $repro_arg;
+    my $argv_idx = _first_index { $_ =~ /^-?-$repro_opt$/ } @$argv_current;
+    if ( $argv_idx > -1 ) {
+        $repro_arg = $$argv_current[ $argv_idx + 1 ];
+        splice @$argv_current, $argv_idx, 2;
     }
-    return $arg;
+    return $repro_arg;
 }
 
 sub _set_repro_file {
