@@ -12,7 +12,7 @@ use Config;
 # TODO: Standalone script that can be used upstream of any command line functions
 # TODO: Auto-build README using POD
 
-our $VERSION = '0.8.0';
+our $VERSION = '0.8.1';
 
 =head1 NAME
 
@@ -335,8 +335,8 @@ sub _validate_archived_info {
 sub _extract_from_archive {
     my ( $archive_lines, $key ) = @_;
 
-    my @values = grep {/#$key: /} @$archive_lines;
-    $_ =~ s/#$key: // for @values;
+    my @values = grep {/^#$key: /} @$archive_lines;
+    $_ =~ s/^#$key: // for @values;
 
     return join "\n", @values;
 }
