@@ -1,5 +1,9 @@
 Revision history for Perl module Log::Reproducible
 
+0.8.1 2014-04-13
+
+  - Fix regular expression bugs
+
 0.8.0 2014-04-13
 
   - Enable customization of command line options
