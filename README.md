@@ -196,6 +196,35 @@ In addition to a newly added file and an untracked file, there are two previousl
 
 For most purposes, you might not require all of this information; however, if you need to determine the conditions that existed when you ran a script six months ago, these details could be critical!
 
+### Customization of command line options
+
+It is possible to customize the names of the command line options that Log::Reproducible uses. This is important if there is a conflict with the option names of your script. It can also help save time by decreasing the number of keystrokes required. To override one or more of the defaults ([`reprodir`](#via-command-line), [`reproduce`](#reproducing-an-archived-analysis), and [`repronote`](#adding-archive-notes)), pass a hash reference when calling Log::Reproducible from your script:
+
+```perl
+use Log::Reproducible {
+    dir       => '/path/to/archive',    # see 'Note 2', below
+    reprodir  => 'dir',
+    reproduce => 'redo',
+    repronote => 'note'
+};
+```
+
+In this example, you would be able to specify a custom archive directory, add a note, and reproduce an analysis from an existing archive like so:
+
+```sh
+perl sample.pl --dir /path/to/archive --note 'This is a note' --redo rlog-sample.pl-YYYYMMDD.HHMMSS
+```
+
+**Note 1:** Only include `key => 'value'` pairs for the option names you want to customize.
+
+**Note 2:** Assigning a value to the `dir` key is only required if you want to set a script-level archive directory (see [above](#script) for how this is normally accomplished).
+
+**Note 3:** Since `--repronote` is probably used more regularly than the other options, perhaps the most useful customization is:
+
+```perl
+use Log::Reproducible { repronote => 'note' };
+```
+
 ## Installation
 
 `Log::Reproducible` can be installed using the `autobuild.sh` script or by running the following commands:
