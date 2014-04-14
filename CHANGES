@@ -1,5 +1,11 @@
 Revision history for Perl module Log::Reproducible
 
+0.8.0 2014-04-13
+
+  - Enable customization of command line options
+  - Add more tests (and generate test coverage data)
+  - Access `@ARGV` and `$dir` via refs
+
 0.7.3 2014-04-04
 
   - Update 'Future Directions' in README
