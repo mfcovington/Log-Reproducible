@@ -40,6 +40,7 @@ sub _first_index (&@) {    # From v0.33 of the wonderful List::MoreUtils
 
 sub reproduce {
     my $custom_repro_opts = shift;
+    _check_for_conflicting_modules();
 
     my $repro_opts     = _parse_custom_repro_opts($custom_repro_opts);
     my $dir            = $$repro_opts{dir};
@@ -79,6 +80,35 @@ sub reproduce {
     _archive_cmd( $current, $repro_file, $prog_dir, $start, $categories,
         $warnings );
     _exit_code( $repro_file, $start );
+}
+
+sub _check_for_conflicting_modules {
+
+    # Only check for conflicts if Module::Loaded is available (i.e. >= 5.9.4)
+    eval "use Module::Loaded";
+    return if $@;
+    require Module::Loaded;
+
+    # Add conflicting modules as they are discovered
+    my @known_conflicts = qw();    # So far, no known conflicts
+
+    my @loaded_conflicts;
+    for (@known_conflicts) {
+        push @loaded_conflicts, $_ if defined is_loaded($_);
+    }
+
+    if ( scalar @loaded_conflicts > 0 ) {
+        print STDERR <<EOF;
+
+WARNING:
+A module that accesses '\@ARGV' has been loaded before Log::Reproducible.
+To avoid potential conflicts, we recommended changing your script such
+that Log::Reproducible is imported before the following module(s):
+
+EOF
+        print STDERR "    $_\n" for sort @loaded_conflicts;
+        print STDERR "\n";
+    }
 }
 
 sub _parse_custom_repro_opts {
