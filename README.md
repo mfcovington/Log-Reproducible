@@ -1,4 +1,4 @@
-# Log::Reproducible (0.7.3)
+# Log::Reproducible (0.8.0)
 
 Increase your reproducibility with the Perl module Log::Reproducible. 
 
@@ -56,7 +56,7 @@ If it was run as `perl bin/sample.pl -a 1 -b 2 -c 3 OTHER ARGUMENTS`, the conten
     ################################################################################
     ##################### GOTO END OF FILE FOR EXIT CODE INFO. #####################
     ################################################################################
-    #ARCHIVERSION: 0.7.3
+    #ARCHIVERSION: 0.8.0
     #PERLVERSION: v5.18.2
     #PERLPATH: /path/to/bin/perl
     #PERLINC: /path/to/perl/lib:/path/to/another/perl/lib:.
@@ -195,6 +195,35 @@ If you are familiar with Git, you will be able to figure out that the Git reposi
 In addition to a newly added file and an untracked file, there are two previously-committed modified files. One modified file has subsequently been staged (`staged-modified-file`) and the other is unstaged (`unstaged-modified-file`). Both modified files have had `A deleted line` replaced with `An added line`.
 
 For most purposes, you might not require all of this information; however, if you need to determine the conditions that existed when you ran a script six months ago, these details could be critical!
+
+### Customization of command line options
+
+It is possible to customize the names of the command line options that Log::Reproducible uses. This is important if there is a conflict with the option names of your script. It can also help save time by decreasing the number of keystrokes required. To override one or more of the defaults ([`reprodir`](#via-command-line), [`reproduce`](#reproducing-an-archived-analysis), and [`repronote`](#adding-archive-notes)), pass a hash reference when calling Log::Reproducible from your script:
+
+```perl
+use Log::Reproducible {
+    dir       => '/path/to/archive',    # see 'Note 2', below
+    reprodir  => 'dir',
+    reproduce => 'redo',
+    repronote => 'note'
+};
+```
+
+In this example, you would be able to specify a custom archive directory, add a note, and reproduce an analysis from an existing archive like so:
+
+```sh
+perl sample.pl --dir /path/to/archive --note 'This is a note' --redo rlog-sample.pl-YYYYMMDD.HHMMSS
+```
+
+**Note 1:** Only include `key => 'value'` pairs for the option names you want to customize.
+
+**Note 2:** Assigning a value to the `dir` key is only required if you want to set a script-level archive directory (see [above](#script) for how this is normally accomplished).
+
+**Note 3:** Since `--repronote` is probably used more regularly than the other options, perhaps the most useful customization is:
+
+```perl
+use Log::Reproducible { repronote => 'note' };
+```
 
 ## Installation
 

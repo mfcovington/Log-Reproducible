@@ -7,12 +7,12 @@ use File::Basename;
 use POSIX qw(strftime difftime ceil floor);
 use Config;
 
+# TODO: Test whether potentially conflicting module has already been called
 # TODO: Add verbose (or silent) option
 # TODO: Standalone script that can be used upstream of any command line functions
-# TODO: Allow customizion of --repronote/--reprodir/--reproduce upon import (to avoid conflicts or just shorten)
 # TODO: Auto-build README using POD
 
-our $VERSION = '0.7.3';
+our $VERSION = '0.8.0';
 
 =head1 NAME
 
@@ -25,8 +25,8 @@ Michael F. Covington <mfcovington@gmail.com>
 =cut
 
 sub import {
-    my ( $pkg, $dir ) = @_;
-    reproduce($dir);
+    my ( $pkg, $custom_repro_opts ) = @_;
+    reproduce($custom_repro_opts);
 }
 
 sub _first_index (&@) {    # From v0.33 of the wonderful List::MoreUtils
@@ -39,12 +39,19 @@ sub _first_index (&@) {    # From v0.33 of the wonderful List::MoreUtils
 }
 
 sub reproduce {
-    my $dir = shift;
-    $dir = _set_dir($dir);
+    my $custom_repro_opts = shift;
+
+    my $repro_opts     = _parse_custom_repro_opts($custom_repro_opts);
+    my $dir            = $$repro_opts{dir};
+    my $full_prog_name = $0;
+    my $argv_current   = \@ARGV;
+    _set_dir( \$dir, $$repro_opts{reprodir}, $argv_current );
     make_path $dir;
 
     my $current = {};
-    my ( $prog, $prog_dir ) = _parse_command($current);
+    my ( $prog, $prog_dir )
+        = _parse_command( $current, $full_prog_name, $$repro_opts{repronote},
+        $argv_current );
     my ( $repro_file, $start ) = _set_repro_file( $current, $dir, $prog );
     _get_current_state( $current, $prog_dir );
 
@@ -61,57 +68,83 @@ sub reproduce {
     };
     my $warnings = [];
 
-    if ( $$current{'CMD'} =~ /\s-?-reproduce\s+(\S+)/ ) {
+    my $reproduce_opt = $$repro_opts{reproduce};
+    if ( $$current{'CMD'} =~ /\s-?-$reproduce_opt\s+(\S+)/ ) {
         my $old_repro_file = $1;
         $$current{'REPRODUCED'} = $old_repro_file;
         $$current{'CMD'}
             = _reproduce_cmd( $current, $prog, $prog_dir, $old_repro_file,
-            $repro_file, $categories, $warnings );
+            $repro_file, $argv_current, $categories, $warnings );
     }
     _archive_cmd( $current, $repro_file, $prog_dir, $start, $categories,
         $warnings );
     _exit_code( $repro_file, $start );
 }
 
+sub _parse_custom_repro_opts {
+    my $custom_repro_opts   = shift;
+
+    my %default_opts = (
+        dir       => undef,
+        reprodir  => 'reprodir',
+        reproduce => 'reproduce',
+        repronote => 'repronote'
+    );
+
+    if ( ! defined $custom_repro_opts) {
+        return \%default_opts;
+    }
+    elsif ( ref($custom_repro_opts) eq 'HASH' ) {
+        for my $opt ( keys %default_opts ) {
+            $$custom_repro_opts{$opt} = $default_opts{$opt}
+                unless exists $$custom_repro_opts{$opt};
+        }
+        return $custom_repro_opts;
+    }
+    else {
+        $default_opts{dir} = $custom_repro_opts;
+        return \%default_opts;
+    }
+}
+
 sub _set_dir {
-    my $dir     = shift;
-    my $cli_dir = _get_repro_arg("reprodir");
+    my ( $dir, $reprodir_opt, $argv_current ) = @_;
+    my $cli_dir = _get_repro_arg( $reprodir_opt, $argv_current );
 
     if ( defined $cli_dir ) {
-        $dir = $cli_dir;
+        $$dir = $cli_dir;
     }
-    elsif ( !defined $dir ) {
+    elsif ( !defined $$dir ) {
         if ( defined $ENV{REPRO_DIR} ) {
-            $dir = $ENV{REPRO_DIR};
+            $$dir = $ENV{REPRO_DIR};
         }
         else {
             my $cwd = getcwd;
-            $dir = "$cwd/repro-archive";
+            $$dir = "$cwd/repro-archive";
         }
     }
-    return $dir;
 }
 
 sub _parse_command {
-    my $current = shift;
-    $$current{'NOTE'} = _get_repro_arg("repronote");
-    for (@ARGV) {
+    my ( $current, $full_prog_name, $repronote_opt, $argv_current ) = @_;
+    $$current{'NOTE'} = _get_repro_arg( $repronote_opt, $argv_current );
+    for (@$argv_current) {
         $_ = "'$_'" if /\s/;
     }
-    my ( $prog, $prog_dir ) = fileparse $0;
-    $$current{'CMD'} = join " ", $prog, @ARGV;
+    my ( $prog, $prog_dir ) = fileparse $full_prog_name;
+    $$current{'CMD'} = join " ", $prog, @$argv_current;
     return $prog, $prog_dir;
 }
 
 sub _get_repro_arg {
-    my $repro_arg = shift;
-    my $arg;
-    my $arg_idx = _first_index { $_ =~ /^-?-$repro_arg$/ } @ARGV;
-    if ( $arg_idx > -1 ) {
-        $arg = $ARGV[ $arg_idx + 1 ];
-        splice @ARGV, $arg_idx, 2;
+    my ( $repro_opt, $argv_current ) = @_;
+    my $repro_arg;
+    my $argv_idx = _first_index { $_ =~ /^-?-$repro_opt$/ } @$argv_current;
+    if ( $argv_idx > -1 ) {
+        $repro_arg = $$argv_current[ $argv_idx + 1 ];
+        splice @$argv_current, $argv_idx, 2;
     }
-    return $arg;
+    return $repro_arg;
 }
 
 sub _set_repro_file {
@@ -133,7 +166,7 @@ sub _now {
 
 sub _reproduce_cmd {
     my ( $current, $prog, $prog_dir, $old_repro_file, $repro_file,
-        $categories, $warnings )
+        $argv_current, $categories, $warnings )
         = @_;
 
     open my $old_repro_fh, "<", $old_repro_file
@@ -143,12 +176,12 @@ sub _reproduce_cmd {
     close $old_repro_fh;
 
     my $cmd = $archive[0];
-    my ( $archived_prog, @args )
+    my ( $archived_prog, @archived_argv )
         = $cmd =~ /((?:\'[^']+\')|(?:\"[^"]+\")|(?:\S+))/g;
-    @ARGV = @args;
+    @$argv_current = @archived_argv;
     print STDERR "Reproducing archive: $old_repro_file\n";
     print STDERR "Reproducing command: $cmd\n";
-    _validate_prog_name( $archived_prog, $prog, @args );
+    _validate_prog_name( $archived_prog, $prog, @archived_argv );
     _validate_archived_info( \@archive, $current, $categories, $warnings );
     _do_or_die() if scalar @$warnings > 0;
     return $cmd;
@@ -344,7 +377,7 @@ sub _exit_code {
     END {
         return unless defined $repro_file;
         my $finish = _now();
-        my $elapsed = _elapsed( $start, $finish );
+        my $elapsed = _elapsed( $$start{'seconds'}, $$finish{'seconds'} );
         open my $repro_fh, ">>", $repro_file
             or die "Cannot open $repro_file for appending: $!";
         print $repro_fh "$?\n";    # This completes EXITCODE line
@@ -355,9 +388,9 @@ sub _exit_code {
 }
 
 sub _elapsed {
-    my ( $start, $finish ) = @_;
+    my ( $start_seconds, $finish_seconds ) = @_;
 
-    my $secs = difftime $$finish{'seconds'}, $$start{'seconds'};
+    my $secs = difftime $finish_seconds, $start_seconds;
     my $mins = int $secs / 60;
     $secs = $secs % 60;
     my $hours = int $mins / 60;

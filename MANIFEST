@@ -1,6 +1,7 @@
 autobuild.sh
 Build.pl
 CHANGES
+cover.pl
 future-README.md
 MANIFEST
 README.md
@@ -8,3 +9,5 @@ sample.pl
 lib/Log/Reproducible.pm
 t/reproducible.t
 t/test-reproducible.pl
+META.yml
+META.json

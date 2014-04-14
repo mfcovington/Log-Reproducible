@@ -34,6 +34,7 @@ my $builder = Module::Build->new(
         'Module::Build' => 0,
     },
     recommends => {
+        'Devel::Cover'  => 0,    # To generate testing coverage report
         'Pod::Markdown' => 0,    # To auto-generate README from POD markup
     },
 );

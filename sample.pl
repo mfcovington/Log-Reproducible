@@ -8,6 +8,13 @@ use strict;
 use warnings;
 use Getopt::Long;
 use Log::Reproducible;
+# use Log::Reproducible 'custom-dir';
+# use Log::Reproducible {
+#     dir       => 'custom-dir',
+#     reprodir  => 'dir',
+#     reproduce => 'redo',
+#     repronote => 'note'
+# };
 
 # default values
 my $a = 0;
