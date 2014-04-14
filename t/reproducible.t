@@ -144,7 +144,7 @@ subtest '_parse_command tests' => sub {
     my $full_prog_name = "/path/to/script.pl";
     my ( $prog, $prog_dir )
         = Log::Reproducible::_parse_command( $current, $full_prog_name,
-        $argv_current );
+        'repronote', $argv_current );
 
     is( $prog,             "script.pl", "Script name" );
     is( $prog_dir,         "/path/to/", "Script directory" );
@@ -182,7 +182,7 @@ sub get_recent_archive {
 
 sub test_set_dir {
     my $test_params = shift;
-    Log::Reproducible::_set_dir( \$$test_params{'dir'},
+    Log::Reproducible::_set_dir( \$$test_params{'dir'}, 'reprodir',
         $$test_params{'args'} );
     is( $$test_params{'dir'}, $$test_params{'expected'},
         $$test_params{'name'} );
