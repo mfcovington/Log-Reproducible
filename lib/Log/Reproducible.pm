@@ -9,7 +9,6 @@ use Config;
 
 # TODO: Add verbose (or silent) option
 # TODO: Standalone script that can be used upstream of any command line functions
-# TODO: Allow customizion of --repronote/--reprodir/--reproduce upon import (to avoid conflicts or just shorten)
 # TODO: Auto-build README using POD
 
 our $VERSION = '0.7.3';
@@ -25,8 +24,8 @@ Michael F. Covington <mfcovington@gmail.com>
 =cut
 
 sub import {
-    my ( $pkg, $dir ) = @_;
-    reproduce($dir);
+    my ( $pkg, $custom_repro_opts ) = @_;
+    reproduce($custom_repro_opts);
 }
 
 sub _first_index (&@) {    # From v0.33 of the wonderful List::MoreUtils
@@ -39,16 +38,19 @@ sub _first_index (&@) {    # From v0.33 of the wonderful List::MoreUtils
 }
 
 sub reproduce {
-    my $dir = shift;
+    my $custom_repro_opts = shift;
 
+    my $repro_opts     = _parse_custom_repro_opts($custom_repro_opts);
+    my $dir            = $$repro_opts{dir};
     my $full_prog_name = $0;
     my $argv_current   = \@ARGV;
-    _set_dir( \$dir, $argv_current );
+    _set_dir( \$dir, $$repro_opts{reprodir}, $argv_current );
     make_path $dir;
 
     my $current = {};
     my ( $prog, $prog_dir )
-        = _parse_command( $current, $full_prog_name, $argv_current );
+        = _parse_command( $current, $full_prog_name, $$repro_opts{repronote},
+        $argv_current );
     my ( $repro_file, $start ) = _set_repro_file( $current, $dir, $prog );
     _get_current_state( $current, $prog_dir );
 
@@ -65,7 +67,8 @@ sub reproduce {
     };
     my $warnings = [];
 
-    if ( $$current{'CMD'} =~ /\s-?-reproduce\s+(\S+)/ ) {
+    my $reproduce_opt = $$repro_opts{reproduce};
+    if ( $$current{'CMD'} =~ /\s-?-$reproduce_opt\s+(\S+)/ ) {
         my $old_repro_file = $1;
         $$current{'REPRODUCED'} = $old_repro_file;
         $$current{'CMD'}
@@ -77,9 +80,35 @@ sub reproduce {
     _exit_code( $repro_file, $start );
 }
 
+sub _parse_custom_repro_opts {
+    my $custom_repro_opts   = shift;
+
+    my %default_opts = (
+        dir       => undef,
+        reprodir  => 'reprodir',
+        reproduce => 'reproduce',
+        repronote => 'repronote'
+    );
+
+    if ( ! defined $custom_repro_opts) {
+        return \%default_opts;
+    }
+    elsif ( ref($custom_repro_opts) eq 'HASH' ) {
+        for my $opt ( keys %default_opts ) {
+            $$custom_repro_opts{$opt} = $default_opts{$opt}
+                unless exists $$custom_repro_opts{$opt};
+        }
+        return $custom_repro_opts;
+    }
+    else {
+        $default_opts{dir} = $custom_repro_opts;
+        return \%default_opts;
+    }
+}
+
 sub _set_dir {
-    my ( $dir, $argv_current ) = @_;
-    my $cli_dir = _get_repro_arg("reprodir", $argv_current);
+    my ( $dir, $reprodir_opt, $argv_current ) = @_;
+    my $cli_dir = _get_repro_arg( $reprodir_opt, $argv_current );
 
     if ( defined $cli_dir ) {
         $$dir = $cli_dir;
@@ -96,8 +125,8 @@ sub _set_dir {
 }
 
 sub _parse_command {
-    my ( $current, $full_prog_name, $argv_current ) = @_;
-    $$current{'NOTE'} = _get_repro_arg( "repronote", $argv_current );
+    my ( $current, $full_prog_name, $repronote_opt, $argv_current ) = @_;
+    $$current{'NOTE'} = _get_repro_arg( $repronote_opt, $argv_current );
     for (@$argv_current) {
         $_ = "'$_'" if /\s/;
     }
