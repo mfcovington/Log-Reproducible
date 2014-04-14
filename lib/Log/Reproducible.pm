@@ -6,6 +6,7 @@ use File::Path 'make_path';
 use File::Basename;
 use POSIX qw(strftime difftime ceil floor);
 use Config;
+use Carp;
 
 # TODO: Test whether potentially conflicting module has already been called
 # TODO: Add verbose (or silent) option
@@ -98,7 +99,7 @@ sub _check_for_conflicting_modules {
     }
 
     if ( scalar @loaded_conflicts > 0 ) {
-        print STDERR <<EOF;
+        my $conflict_warning = <<EOF;
 
 WARNING:
 A module that accesses '\@ARGV' has been loaded before Log::Reproducible.
@@ -106,8 +107,8 @@ To avoid potential conflicts, we recommended changing your script such
 that Log::Reproducible is imported before the following module(s):
 
 EOF
-        print STDERR "    $_\n" for sort @loaded_conflicts;
-        print STDERR "\n";
+        $conflict_warning .= "    $_\n" for sort @loaded_conflicts;
+        carp "$conflict_warning\nThis warning originated";
     }
 }
 
