@@ -28,6 +28,36 @@ Michael F. Covington <mfcovington@gmail.com>
 use File::Temp ();
 use IPC::Open3;
 
+
+sub _check_for_conflicting_modules {
+
+    # Only check for conflicts if Module::Loaded is available (i.e. >= 5.9.4)
+    eval "use Module::Loaded";
+    return if $@;
+    require Module::Loaded;
+
+    # Add conflicting modules as they are discovered
+    my @known_conflicts = qw();    # So far, no known conflicts
+
+    my @loaded_conflicts;
+    for (@known_conflicts) {
+        push @loaded_conflicts, $_ if defined is_loaded($_);
+    }
+
+    if ( scalar @loaded_conflicts > 0 ) {
+        my $conflict_warning = <<EOF;
+
+WARNING:
+A module that accesses '\@ARGV' has been loaded before Log::Reproducible.
+To avoid potential conflicts, we recommended changing your script such
+that Log::Reproducible is imported before the following module(s):
+
+EOF
+        $conflict_warning .= "    $_\n" for sort @loaded_conflicts;
+        carp "$conflict_warning\nThis warning originated";
+    }
+}
+
 sub _check_for_potentially_conflicting_modules {
     my $code = do { open my $fh, '<', $0; local $/; <$fh> };
     my ($code_to_test) = $code =~ /(\A .*?) use \s+ @{[__PACKAGE__]}/sx;
@@ -63,6 +93,7 @@ sub _check_for_potentially_conflicting_modules {
 }
 
 BEGIN {
+    _check_for_conflicting_modules();
     _check_for_potentially_conflicting_modules();
 }
 
@@ -82,7 +113,6 @@ sub _first_index (&@) {    # From v0.33 of the wonderful List::MoreUtils
 
 sub reproduce {
     my $custom_repro_opts = shift;
-    _check_for_conflicting_modules();
 
     my $repro_opts     = _parse_custom_repro_opts($custom_repro_opts);
     my $dir            = $$repro_opts{dir};
@@ -122,35 +152,6 @@ sub reproduce {
     _archive_cmd( $current, $repro_file, $prog_dir, $start, $categories,
         $warnings );
     _exit_code( $repro_file, $start );
-}
-
-sub _check_for_conflicting_modules {
-
-    # Only check for conflicts if Module::Loaded is available (i.e. >= 5.9.4)
-    eval "use Module::Loaded";
-    return if $@;
-    require Module::Loaded;
-
-    # Add conflicting modules as they are discovered
-    my @known_conflicts = qw();    # So far, no known conflicts
-
-    my @loaded_conflicts;
-    for (@known_conflicts) {
-        push @loaded_conflicts, $_ if defined is_loaded($_);
-    }
-
-    if ( scalar @loaded_conflicts > 0 ) {
-        my $conflict_warning = <<EOF;
-
-WARNING:
-A module that accesses '\@ARGV' has been loaded before Log::Reproducible.
-To avoid potential conflicts, we recommended changing your script such
-that Log::Reproducible is imported before the following module(s):
-
-EOF
-        $conflict_warning .= "    $_\n" for sort @loaded_conflicts;
-        carp "$conflict_warning\nThis warning originated";
-    }
 }
 
 sub _parse_custom_repro_opts {
