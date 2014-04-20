@@ -31,20 +31,22 @@ use IPC::Open3;
 BEGIN {
     my $code = do { open my $fh, '<', $0; local $/; <$fh> };
     my ($code_to_test) = $code =~ /(\A .*?) use \s+ @{[__PACKAGE__]}/sx;
-    my ($temp_fh, $temp_filename) = File::Temp::tempfile();
+    my ( $temp_fh, $temp_filename ) = File::Temp::tempfile();
     print $temp_fh $code_to_test;
 
-    local(*CIN, *COUT, *CERR);
+    local ( *CIN, *COUT, *CERR );
     my $cmd = "$^X -MO=Xref,-r $temp_filename";
-    my $pid = open3(\*CIN, \*COUT, \*CERR, $cmd);
+    my $pid = open3( \*CIN, \*COUT, \*CERR, $cmd );
 
-    my $re = '(?:' . join('|' => map { /^(?:\.[\\\/]?)?(.*)$/; "\Q$1" } @INC)
-           . ')[\\\/]?(\S+?)(?:\.\S+)?\s';
+    my $re
+        = '(?:'
+        . join( '|' => map { /^(?:\.[\\\/]?)?(.*)$/; "\Q$1" } @INC )
+        . ')[\\\/]?(\S+?)(?:\.\S+)?\s';
     my %argv_modules;
 
     for (<COUT>) {
         next unless /\@\s+ARGV/;
-        (my $module) = /$re/;
+        ( my $module ) = /$re/;
         $module =~ s{[\\\/]}{::}g;
         ++$argv_modules{$module};
     }
@@ -55,7 +57,7 @@ BEGIN {
 
     if (@warn_modules) {
         warn "WARNING:\n",
-            "Modules using'\@ARGV' before " . __PACKAGE__ . " loaded:\n";
+            "Modules using '\@ARGV' before " . __PACKAGE__ . " loaded:\n";
         warn "\t$_\n" for @warn_modules;
     }
 }
