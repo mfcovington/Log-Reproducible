@@ -28,7 +28,7 @@ Michael F. Covington <mfcovington@gmail.com>
 use File::Temp ();
 use IPC::Open3;
 
-BEGIN {
+sub _check_for_potentially_conflicting_modules {
     my $code = do { open my $fh, '<', $0; local $/; <$fh> };
     my ($code_to_test) = $code =~ /(\A .*?) use \s+ @{[__PACKAGE__]}/sx;
     my ( $temp_fh, $temp_filename ) = File::Temp::tempfile();
@@ -60,6 +60,10 @@ BEGIN {
             "Modules using '\@ARGV' before " . __PACKAGE__ . " loaded:\n";
         warn "\t$_\n" for @warn_modules;
     }
+}
+
+BEGIN {
+    _check_for_potentially_conflicting_modules();
 }
 
 sub import {
