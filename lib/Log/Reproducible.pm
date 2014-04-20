@@ -30,14 +30,12 @@ use IPC::Open3;
 
 
 sub _check_for_known_conflicting_modules {
+    my @known_conflicts = @_;
 
     # Only check for conflicts if Module::Loaded is available (i.e. >= 5.9.4)
     eval "use Module::Loaded";
     return if $@;
     require Module::Loaded;
-
-    # Add conflicting modules as they are discovered
-    my @known_conflicts = qw();    # So far, no known conflicts
 
     my @loaded_conflicts;
     for (@known_conflicts) {
@@ -93,7 +91,7 @@ sub _check_for_potentially_conflicting_modules {
 }
 
 BEGIN {
-    _check_for_known_conflicting_modules();
+    _check_for_known_conflicting_modules( '', '' );    # Add when discovered
     _check_for_potentially_conflicting_modules();
 }
 
