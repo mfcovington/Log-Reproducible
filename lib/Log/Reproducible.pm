@@ -6,7 +6,6 @@ use File::Path 'make_path';
 use File::Basename;
 use POSIX qw(strftime difftime ceil floor);
 use Config;
-use Carp;
 
 # TODO: Test whether potentially conflicting module has already been called
 # TODO: Add verbose (or silent) option
@@ -42,17 +41,18 @@ sub _check_for_known_conflicting_modules {
         push @loaded_conflicts, $_ if defined is_loaded($_);
     }
 
-    if ( scalar @loaded_conflicts > 0 ) {
+    if (@loaded_conflicts) {
         my $conflict_warning = <<EOF;
 
-WARNING:
-A module that accesses '\@ARGV' has been loaded before Log::Reproducible.
-To avoid potential conflicts, we recommended changing your script such
-that Log::Reproducible is imported before the following module(s):
+KNOWN CONFLICT WARNING:
+A module that accesses '\@ARGV' has been loaded before @{[__PACKAGE__]}.
+This module is known to create a conflict with @{[__PACKAGE__]} functionality.
+To avoid any conflicts, we strongly recommended changing your script such
+that @{[__PACKAGE__]} is imported before the following module(s):
 
 EOF
         $conflict_warning .= "    $_\n" for sort @loaded_conflicts;
-        carp "$conflict_warning\nThis warning originated";
+        warn "$conflict_warning\n";
     }
 }
 
@@ -84,9 +84,16 @@ sub _check_for_potentially_conflicting_modules {
     my @warn_modules = sort keys %argv_modules;
 
     if (@warn_modules) {
-        warn "WARNING:\n",
-            "Modules using '\@ARGV' before " . __PACKAGE__ . " loaded:\n";
-        warn "\t$_\n" for @warn_modules;
+        my $conflict_warning = <<EOF;
+
+POTENTIAL CONFLICT WARNING:
+A module that accesses '\@ARGV' has been loaded before @{[__PACKAGE__]}.
+To avoid potential conflicts, we recommended changing your script such
+that @{[__PACKAGE__]} is imported before the following module(s):
+
+EOF
+        $conflict_warning .= "    $_\n" for sort @warn_modules;
+        warn "$conflict_warning\n";
     }
 }
 
