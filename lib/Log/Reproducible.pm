@@ -29,7 +29,7 @@ use File::Temp ();
 use IPC::Open3;
 
 
-sub _check_for_conflicting_modules {
+sub _check_for_known_conflicting_modules {
 
     # Only check for conflicts if Module::Loaded is available (i.e. >= 5.9.4)
     eval "use Module::Loaded";
@@ -93,7 +93,7 @@ sub _check_for_potentially_conflicting_modules {
 }
 
 BEGIN {
-    _check_for_conflicting_modules();
+    _check_for_known_conflicting_modules();
     _check_for_potentially_conflicting_modules();
 }
 
