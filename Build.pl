@@ -25,6 +25,8 @@ my $builder = Module::Build->new(
         "Cwd"            => 0,
         "File::Basename" => 0,
         "File::Path"     => 0,
+        "File::Temp"     => 0,
+        "IPC::Open3"     => 0,
         "POSIX"          => 0,
     },
     build_requires => {
@@ -35,7 +37,7 @@ my $builder = Module::Build->new(
     },
     recommends => {
         'Devel::Cover'   => 0,    # To generate testing coverage report
-        'Module::Loaded' => 0,    # To test for loading of conflicting modules
+        'Module::Loaded' => 0,    # To test for loading of known conflicting modules
         'Pod::Markdown'  => 0,    # To auto-generate README from POD markup
     },
 );
