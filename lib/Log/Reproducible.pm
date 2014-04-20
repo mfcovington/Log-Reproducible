@@ -63,7 +63,8 @@ sub _check_for_potentially_conflicting_modules {
     print $temp_fh $code_to_test;
 
     local ( *CIN, *COUT, *CERR );
-    my $cmd = "$^X -MO=Xref,-r $temp_filename";
+    my $perl = $Config{perlpath};
+    my $cmd = "$perl -MO=Xref,-r $temp_filename";
     my $pid = open3( \*CIN, \*COUT, \*CERR, $cmd );
 
     my $re
