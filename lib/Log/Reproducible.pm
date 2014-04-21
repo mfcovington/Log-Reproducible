@@ -88,6 +88,8 @@ sub _check_for_potentially_conflicting_modules {
     }
 
     waitpid $pid, 0;
+    File::Temp::unlink0( $temp_fh, $temp_filename )
+        or warn "Error unlinking file $temp_filename safely";
 
     my @warn_modules = sort keys %argv_modules;
 
