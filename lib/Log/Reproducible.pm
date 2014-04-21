@@ -68,16 +68,25 @@ sub _check_for_potentially_conflicting_modules {
     my $pid = open3( \*CIN, \*COUT, \*CERR, $cmd );
 
     my $re
-        = '(?:'
+        = '((?:'
         . join( '|' => map { /^(?:\.[\\\/]?)?(.*)$/; "\Q$1" } @INC )
-        . ')[\\\/]?(\S+?)(?:\.\S+)?\s';
+        . ')[\\\/]?\S+?)(?:\.\S+)?\s+(\S+)';
     my %argv_modules;
 
     for (<COUT>) {
         next unless /\@\s+ARGV/;
-        ( my $module ) = /$re/;
-        $module =~ s{[\\\/]}{::}g;
-        ++$argv_modules{$module};
+        my ( $module_path, $object_path ) = /$re/;
+
+        # Get overlap between end of module path and beginning of object path
+        $module_path =~ s|[\\\/]|::|g;
+        my @object_path_steps = split /::/, $object_path;
+        for my $step ( 0 .. $#object_path_steps ) {
+            my $module_name = join "::", @object_path_steps[ 0 .. $step ];
+            if ( $module_path =~ /$module_name$/ ) {
+                $argv_modules{$module_name} = 1;
+                last;
+            }
+        }
     }
 
     waitpid $pid, 0;
