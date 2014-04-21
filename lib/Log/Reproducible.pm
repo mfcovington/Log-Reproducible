@@ -4,6 +4,8 @@ use warnings;
 use Cwd;
 use File::Path 'make_path';
 use File::Basename;
+use File::Temp ();
+use IPC::Open3;
 use POSIX qw(strftime difftime ceil floor);
 use Config;
 
@@ -23,10 +25,6 @@ Log::Reproducible - Effortless record-keeping and enhanced reproducibility. Set 
 Michael F. Covington <mfcovington@gmail.com>
 
 =cut
-
-use File::Temp ();
-use IPC::Open3;
-
 
 sub _check_for_known_conflicting_modules {
     my @known_conflicts = @_;
@@ -64,8 +62,8 @@ sub _check_for_potentially_conflicting_modules {
 
     local ( *CIN, *COUT, *CERR );
     my $perl = $Config{perlpath};
-    my $cmd = "$perl -MO=Xref,-r $temp_filename";
-    my $pid = open3( \*CIN, \*COUT, \*CERR, $cmd );
+    my $cmd  = "$perl -MO=Xref,-r $temp_filename";
+    my $pid  = open3( \*CIN, \*COUT, \*CERR, $cmd );
 
     my $re
         = '((?:'
