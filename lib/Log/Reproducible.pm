@@ -4,11 +4,12 @@ use warnings;
 use Cwd;
 use File::Path 'make_path';
 use File::Basename;
+use File::Temp ();
+use IPC::Open3;
 use POSIX qw(strftime difftime ceil floor);
 use Config;
-use Carp;
 
-# TODO: Test whether potentially conflicting module has already been called
+# TODO: Add tests for conflicting module checker
 # TODO: Add verbose (or silent) option
 # TODO: Standalone script that can be used upstream of any command line functions
 # TODO: Auto-build README using POD
@@ -24,6 +25,92 @@ Log::Reproducible - Effortless record-keeping and enhanced reproducibility. Set 
 Michael F. Covington <mfcovington@gmail.com>
 
 =cut
+
+sub _check_for_known_conflicting_modules {
+    my @known_conflicts = @_;
+
+    # Only check for conflicts if Module::Loaded is available (i.e. >= 5.9.4)
+    eval "use Module::Loaded";
+    return if $@;
+    require Module::Loaded;
+
+    my @loaded_conflicts;
+    for (@known_conflicts) {
+        push @loaded_conflicts, $_ if defined is_loaded($_);
+    }
+
+    if (@loaded_conflicts) {
+        my $conflict_warning = <<EOF;
+
+KNOWN CONFLICT WARNING:
+A module that accesses '\@ARGV' has been loaded before @{[__PACKAGE__]}.
+This module is known to create a conflict with @{[__PACKAGE__]} functionality.
+To avoid any conflicts, we strongly recommended changing your script such
+that @{[__PACKAGE__]} is imported before the following module(s):
+
+EOF
+        $conflict_warning .= "    $_\n" for sort @loaded_conflicts;
+        warn "$conflict_warning\n";
+    }
+}
+
+sub _check_for_potentially_conflicting_modules {
+    my $code = do { open my $fh, '<', $0 or return; local $/; <$fh> };
+    my ($code_to_test) = $code =~ /(\A .*?) use \s+ @{[__PACKAGE__]}/sx;
+    my ( $temp_fh, $temp_filename ) = File::Temp::tempfile();
+    print $temp_fh $code_to_test;
+
+    local ( *CIN, *COUT, *CERR );
+    my $perl = $Config{perlpath};
+    my $cmd  = "$perl -MO=Xref,-r $temp_filename";
+    my $pid  = open3( \*CIN, \*COUT, \*CERR, $cmd );
+
+    my $re
+        = '((?:'
+        . join( '|' => map { /^(?:\.[\\\/]?)?(.*)$/; "\Q$1" } @INC )
+        . ')[\\\/]?\S+?)(?:\.\S+)?\s+(\S+)';
+    my %argv_modules;
+
+    for (<COUT>) {
+        next unless /\@\s+ARGV/;
+        my ( $module_path, $object_path ) = /$re/;
+
+        # Get overlap between end of module path and beginning of object path
+        $module_path =~ s|[\\\/]|::|g;
+        my @object_path_steps = split /::/, $object_path;
+        for my $step ( 0 .. $#object_path_steps ) {
+            my $module_name = join "::", @object_path_steps[ 0 .. $step ];
+            if ( $module_path =~ /$module_name$/ ) {
+                $argv_modules{$module_name} = 1;
+                last;
+            }
+        }
+    }
+
+    waitpid $pid, 0;
+    File::Temp::unlink0( $temp_fh, $temp_filename )
+        or warn "Error unlinking file $temp_filename safely";
+
+    my @warn_modules = sort keys %argv_modules;
+
+    if (@warn_modules) {
+        my $conflict_warning = <<EOF;
+
+POTENTIAL CONFLICT WARNING:
+A module that accesses '\@ARGV' has been loaded before @{[__PACKAGE__]}.
+To avoid potential conflicts, we recommended changing your script such
+that @{[__PACKAGE__]} is imported before the following module(s):
+
+EOF
+        $conflict_warning .= "    $_\n" for sort @warn_modules;
+        warn "$conflict_warning\n";
+    }
+}
+
+BEGIN {
+    _check_for_known_conflicting_modules( '', '' );    # Add when discovered
+    _check_for_potentially_conflicting_modules();
+}
 
 sub import {
     my ( $pkg, $custom_repro_opts ) = @_;
@@ -41,7 +128,6 @@ sub _first_index (&@) {    # From v0.33 of the wonderful List::MoreUtils
 
 sub reproduce {
     my $custom_repro_opts = shift;
-    _check_for_conflicting_modules();
 
     my $repro_opts     = _parse_custom_repro_opts($custom_repro_opts);
     my $dir            = $$repro_opts{dir};
@@ -81,35 +167,6 @@ sub reproduce {
     _archive_cmd( $current, $repro_file, $prog_dir, $start, $categories,
         $warnings );
     _exit_code( $repro_file, $start );
-}
-
-sub _check_for_conflicting_modules {
-
-    # Only check for conflicts if Module::Loaded is available (i.e. >= 5.9.4)
-    eval "use Module::Loaded";
-    return if $@;
-    require Module::Loaded;
-
-    # Add conflicting modules as they are discovered
-    my @known_conflicts = qw();    # So far, no known conflicts
-
-    my @loaded_conflicts;
-    for (@known_conflicts) {
-        push @loaded_conflicts, $_ if defined is_loaded($_);
-    }
-
-    if ( scalar @loaded_conflicts > 0 ) {
-        my $conflict_warning = <<EOF;
-
-WARNING:
-A module that accesses '\@ARGV' has been loaded before Log::Reproducible.
-To avoid potential conflicts, we recommended changing your script such
-that Log::Reproducible is imported before the following module(s):
-
-EOF
-        $conflict_warning .= "    $_\n" for sort @loaded_conflicts;
-        carp "$conflict_warning\nThis warning originated";
-    }
 }
 
 sub _parse_custom_repro_opts {
