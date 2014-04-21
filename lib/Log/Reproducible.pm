@@ -9,7 +9,7 @@ use IPC::Open3;
 use POSIX qw(strftime difftime ceil floor);
 use Config;
 
-# TODO: Test whether potentially conflicting module has already been called
+# TODO: Add tests for conflicting module checker
 # TODO: Add verbose (or silent) option
 # TODO: Standalone script that can be used upstream of any command line functions
 # TODO: Auto-build README using POD
