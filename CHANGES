@@ -1,5 +1,10 @@
 Revision history for Perl module Log::Reproducible
 
+0.8.2 2014-04-20
+
+  - Check for known conflicting modules (e.g., ones that touch @ARGV upon import) loaded before Log::Reproducible
+  - Check for potentially conflicting modules (e.g., ones that use @ARGV somehow) loaded before Log::Reproducible. Thanks to Ken Cotterill for his great code to accomplish this!
+
 0.8.1 2014-04-13
 
   - Fix regular expression bugs
@@ -51,7 +56,7 @@ Revision history for Perl module Log::Reproducible
 
 0.4.0 2014-03-25
 
-  - Add Perl info to archive
+  - Add Perl info to archive. Thanks to David Cantrell for his improvements on this!
   - Compare archived vs current Perl/git info
 
 0.3.0 2014-03-24
