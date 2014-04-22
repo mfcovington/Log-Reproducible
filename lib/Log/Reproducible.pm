@@ -50,7 +50,7 @@ that @{[__PACKAGE__]} is imported before the following module(s):
 
 EOF
         $conflict_warning .= "    $_\n" for sort @loaded_conflicts;
-        warn "$conflict_warning\n";
+        print STDERR "$conflict_warning\n";
     }
 }
 
@@ -103,7 +103,7 @@ that @{[__PACKAGE__]} is imported before the following module(s):
 
 EOF
         $conflict_warning .= "    $_\n" for sort @warn_modules;
-        warn "$conflict_warning\n";
+        print STDERR "$conflict_warning\n";
     }
 }
 
