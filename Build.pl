@@ -39,6 +39,7 @@ my $builder = Module::Build->new(
         'Devel::Cover'   => 0,    # To generate testing coverage report
         'Module::Loaded' => 0,    # To test for loading of known conflicting modules
         'Pod::Markdown'  => 0,    # To auto-generate README from POD markup
+        'Text::Diff'     => 0,    # To summarize Archived vs Current differences
     },
 );
 
