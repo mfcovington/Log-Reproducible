@@ -327,7 +327,7 @@ sub _perl_info {
     my $current = shift;
     $$current{'PERLPATH'}    = $Config{perlpath};
     $$current{'PERLVERSION'} = sprintf "v%vd", $^V;
-    $$current{'PERLINC'}     = join ":", @INC;
+    $$current{'PERLINC'}     = join "\n", @INC;
 }
 
 sub _dir_info {
