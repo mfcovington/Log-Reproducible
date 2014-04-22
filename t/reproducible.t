@@ -154,7 +154,7 @@ subtest '_parse_command tests' => sub {
 };
 
 subtest '_divider_message tests' => sub {
-    plan tests => 4;
+    plan tests => 5;
 
     my $message;
     $message = Log::Reproducible::_divider_message("X" x 18);
@@ -166,8 +166,11 @@ subtest '_divider_message tests' => sub {
     $message = Log::Reproducible::_divider_message();
     is($message, "#" x 80 . "\n", 'Divider line only, no message');
 
+    $message = Log::Reproducible::_divider_message("X" x 77);
+    is($message, "# " . "X" x 77 . " #\n", 'Message almost as long as width (77)');
+
     $message = Log::Reproducible::_divider_message("X" x 100);
-    is($message, "X" x 100 . "\n", 'Message longer than width (80)');
+    is($message, "# " . "X" x 100 . " #\n", 'Message longer than width (80)');
 };
 
 exit;

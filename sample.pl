@@ -6,8 +6,8 @@
 #
 use strict;
 use warnings;
-use Getopt::Long;
 use Log::Reproducible;
+use Getopt::Long;
 # use Log::Reproducible 'custom-dir';
 # use Log::Reproducible {
 #     dir       => 'custom-dir',

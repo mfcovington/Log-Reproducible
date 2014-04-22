@@ -6,10 +6,10 @@
 #
 use strict;
 use warnings;
-use Getopt::Long;
 use FindBin qw($Bin);
 use lib "$Bin/../lib";
 use Log::Reproducible;
+use Getopt::Long;
 
 # default values
 my $a = 0;

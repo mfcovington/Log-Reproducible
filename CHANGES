@@ -1,5 +1,10 @@
 Revision history for Perl module Log::Reproducible
 
+0.9.0 2014-04-21
+
+  - Summarize differences between archived and current conditions when reproducing
+  - Update how divider message works
+
 0.8.2 2014-04-20
 
   - Check for known conflicting modules (e.g., ones that touch @ARGV upon import) loaded before Log::Reproducible

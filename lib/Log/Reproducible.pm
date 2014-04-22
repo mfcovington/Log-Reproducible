@@ -14,7 +14,7 @@ use Config;
 # TODO: Standalone script that can be used upstream of any command line functions
 # TODO: Auto-build README using POD
 
-our $VERSION = '0.8.2';
+our $VERSION = '0.9.0';
 
 =head1 NAME
 
@@ -50,7 +50,7 @@ that @{[__PACKAGE__]} is imported before the following module(s):
 
 EOF
         $conflict_warning .= "    $_\n" for sort @loaded_conflicts;
-        warn "$conflict_warning\n";
+        print STDERR "$conflict_warning\n";
     }
 }
 
@@ -103,7 +103,7 @@ that @{[__PACKAGE__]} is imported before the following module(s):
 
 EOF
         $conflict_warning .= "    $_\n" for sort @warn_modules;
-        warn "$conflict_warning\n";
+        print STDERR "$conflict_warning\n";
     }
 }
 
@@ -157,15 +157,18 @@ sub reproduce {
     my $warnings = [];
 
     my $reproduce_opt = $$repro_opts{reproduce};
+    my $diff_file;
     if ( $$current{'CMD'} =~ /\s-?-$reproduce_opt\s+(\S+)/ ) {
         my $old_repro_file = $1;
         $$current{'REPRODUCED'} = $old_repro_file;
-        $$current{'CMD'}
-            = _reproduce_cmd( $current, $prog, $prog_dir, $old_repro_file,
-            $repro_file, $argv_current, $categories, $warnings );
+        ( $$current{'CMD'}, $diff_file ) = _reproduce_cmd(
+            $current,    $prog, $prog_dir,     $old_repro_file,
+            $repro_file, $dir,  $argv_current, $categories,
+            $warnings,   $start
+        );
     }
     _archive_cmd( $current, $repro_file, $prog_dir, $start, $categories,
-        $warnings );
+        $warnings, $diff_file );
     _exit_code( $repro_file, $start );
 }
 
@@ -253,9 +256,10 @@ sub _now {
 }
 
 sub _reproduce_cmd {
-    my ( $current, $prog, $prog_dir, $old_repro_file, $repro_file,
-        $argv_current, $categories, $warnings )
-        = @_;
+    my ($current,    $prog, $prog_dir,     $old_repro_file,
+        $repro_file, $dir,  $argv_current, $categories,
+        $warnings,   $start
+    ) = @_;
 
     open my $old_repro_fh, "<", $old_repro_file
         or die "Cannot open $old_repro_file for reading: $!\n";
@@ -271,14 +275,16 @@ sub _reproduce_cmd {
     print STDERR "Reproducing command: $cmd\n";
     _validate_prog_name( $archived_prog, $prog, @archived_argv );
     _validate_archived_info( \@archive, $current, $categories, $warnings );
-    _do_or_die() if scalar @$warnings > 0;
-    return $cmd;
+    my $diff_file
+        = _summarize_warnings( $warnings, $old_repro_file, $repro_file, $dir,
+        $prog, $start );
+    return $cmd, $diff_file;
 }
 
 sub _archive_cmd {
-    my ( $current, $repro_file, $prog_dir, $start, $categories, $warnings )
-        = @_;
-    my $error_summary = join "\n", @$warnings;
+    my ($current,    $repro_file, $prog_dir, $start,
+        $categories, $warnings,   $diff_file
+    ) = @_;
 
     open my $repro_fh, ">", $repro_file
         or die "Cannot open $repro_file for writing: $!";
@@ -286,6 +292,7 @@ sub _archive_cmd {
 
     _add_archive_comment( $_, $$current{$_}, $repro_fh )
         for @{ $$categories{'script'} };
+    _add_warnings( $warnings, $diff_file, $repro_fh ) if @$warnings;
     _add_divider($repro_fh);
     _add_archive_comment( $_, $$current{$_}, $repro_fh )
         for @{ $$categories{'system'} };
@@ -327,7 +334,7 @@ sub _perl_info {
     my $current = shift;
     $$current{'PERLPATH'}    = $Config{perlpath};
     $$current{'PERLVERSION'} = sprintf "v%vd", $^V;
-    $$current{'PERLINC'}     = join ":", @INC;
+    $$current{'PERLINC'}     = join "\n", @INC;
 }
 
 sub _dir_info {
@@ -364,10 +371,20 @@ sub _add_archive_comment {
     }
 }
 
+sub _add_warnings {
+    my ( $warnings, $diff_file, $repro_fh ) = @_;
+    print $repro_fh _divider_message();
+    print $repro_fh _divider_message("FOUND DIFFERENCES BETWEEN ARCHIVE AND CURRENT CONDITIONS");
+    print $repro_fh _divider_message();
+    _add_archive_comment( 'DIFFSUMMARY', $diff_file, $repro_fh );
+    _add_archive_comment( 'WARNINGS', $$_{message}, $repro_fh )
+        for @$warnings;
+}
+
 sub _add_divider {
     my $repro_fh = shift;
     print $repro_fh _divider_message();
-    print $repro_fh _divider_message("GOTO END OF FILE FOR EXIT CODE INFO.");
+    print $repro_fh _divider_message("GOTO END OF FILE FOR EXIT CODE INFO");
     print $repro_fh _divider_message();
 }
 
@@ -389,9 +406,9 @@ sub _divider_message {
         my $msg_len = length($message) + 2;
         my $pad     = ( $width - $msg_len ) / 2;
         $message
-            = $pad > 0
+            = $pad > 1
             ? join " ", "#" x ceil($pad), $message, "#" x floor($pad)
-            : $message;
+            : "# $message #";
     }
     else {
         $message = "#" x $width;
@@ -438,25 +455,86 @@ sub _compare_archive_current {
 
     if ( $archived ne $current_value ) {
         my $warning_message = "Archived and current $key do NOT match";
-        push @$warnings, $warning_message;
-        print STDERR "WARNING: $warning_message\n";
+        push @$warnings,
+            {
+                message  => $warning_message,
+                archived => $archived,
+                current  => $current_value
+            };
     }
 }
 
+sub _summarize_warnings {
+    my ( $warnings, $old_repro_file, $repro_file, $dir, $prog, $start ) = @_;
+    my $diff_file;
+    if (@$warnings) {
+        print STDERR "\n";
+        for my $alert (@$warnings) {
+            print STDERR "WARNING: $$alert{message}\n";
+        }
+        print STDERR <<EOF;
+
+There are inconsistencies between the archived and current conditions.
+These differences might affect reproducibility. A summary can be found at:
+EOF
+        $diff_file
+            = _repro_diff( $warnings, $old_repro_file, $repro_file, $dir,
+            $prog, $start );
+        _do_or_die();
+    }
+    return $diff_file;
+}
+
+sub _repro_diff {
+    my ( $warnings, $old_repro_file, $repro_file, $dir, $prog, $start ) = @_;
+
+    eval "use Text::Diff";
+    if ($@) {
+        print STDERR
+            "  Uh oh, you need to install Text::Diff to see the summary! (http://www.cpan.org/modules/INSTALL.html)\n";
+        return;
+    }
+    require Text::Diff;
+
+    my ($old_timestamp) = $old_repro_file =~ /-(\d{8}\.\d{6})$/;
+    my $new_timestamp = $$start{'timestamp'};
+    my $diff_file = "$dir/rdiff-$prog-$old_timestamp.vs.$new_timestamp";
+    open my $diff_fh, ">", $diff_file;
+    print $diff_fh <<HEAD;
+The following inconsistencies between archived and current conditions were found when
+reproducing a run from an archive. These have the potential to affect reproducibility.
+------------------------------------------------------------------------------------------
+Archive: $old_repro_file
+Current: $repro_file
+------------------------------------------------------------------------------------------
+Note: This file is often best viewed with word wrapping disabled
+------------------------------------------------------------------------------------------
+
+HEAD
+    for my $alert (@$warnings) {
+        my $diff = diff( \$$alert{archived}, \$$alert{current},
+            { STYLE => "Table" } );
+        print $diff_fh $$alert{message}, "\n";
+        print $diff_fh $diff, "\n";
+    }
+    close $diff_fh;
+    print STDERR "  $diff_file\n";
+    return $diff_file;
+}
+
 sub _do_or_die {
-    print STDERR
-        "\nThere are inconsistencies between archived and current conditions.\n";
-    print STDERR
-        "This may affect reproducibility. Do you want to continue? (y/n) ";
+    print STDERR "Do you want to continue? (y/n) ";
     my $response = <STDIN>;
     if ( $response =~ /^Y(?:ES)?$/i ) {
         return;
     }
     elsif ( $response =~ /^N(?:O)?$/i ) {
-        print "Better luck next time...\n";
+        print STDERR "Better luck next time...\n";
         exit;
     }
-    else { _do_or_die(); }
+    else {
+        _do_or_die();
+    }
 }
 
 sub _exit_code {
