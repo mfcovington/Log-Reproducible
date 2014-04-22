@@ -275,20 +275,9 @@ sub _reproduce_cmd {
     print STDERR "Reproducing command: $cmd\n";
     _validate_prog_name( $archived_prog, $prog, @archived_argv );
     _validate_archived_info( \@archive, $current, $categories, $warnings );
-
-    my $diff_file;
-    if ( scalar @$warnings > 0 ) {
-        print STDERR <<EOF;
-
-There are inconsistencies between the archived and current conditions.
-These differences might affect reproducibility. A summary can be found at:
-EOF
-        $diff_file
-            = _repro_diff( $warnings, $old_repro_file, $repro_file, $dir,
-            $prog, $start );
-        _do_or_die( $warnings, $old_repro_file, $repro_file, $dir, $prog,
-            $start );
-    }
+    my $diff_file
+        = _summarize_warnings( $warnings, $old_repro_file, $repro_file, $dir,
+        $prog, $start );
     return $cmd, $diff_file;
 }
 
@@ -474,6 +463,23 @@ sub _compare_archive_current {
             };
         print STDERR "WARNING: $warning_message\n";
     }
+}
+
+sub _summarize_warnings {
+    my ( $warnings, $old_repro_file, $repro_file, $dir, $prog, $start ) = @_;
+    my $diff_file;
+    if ( scalar @$warnings > 0 ) {
+        print STDERR <<EOF;
+
+There are inconsistencies between the archived and current conditions.
+These differences might affect reproducibility. A summary can be found at:
+EOF
+        $diff_file
+            = _repro_diff( $warnings, $old_repro_file, $repro_file, $dir,
+            $prog, $start );
+        _do_or_die();
+    }
+    return $diff_file;
 }
 
 sub _do_or_die {
