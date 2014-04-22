@@ -482,21 +482,6 @@ EOF
     return $diff_file;
 }
 
-sub _do_or_die {
-    print STDERR "Do you want to continue? (y/n) ";
-    my $response = <STDIN>;
-    if ( $response =~ /^Y(?:ES)?$/i ) {
-        return;
-    }
-    elsif ( $response =~ /^N(?:O)?$/i ) {
-        print STDERR "Better luck next time...\n";
-        exit;
-    }
-    else {
-        _do_or_die();
-    }
-}
-
 sub _repro_diff {
     my ( $warnings, $old_repro_file, $repro_file, $dir, $prog, $start ) = @_;
 
@@ -532,6 +517,21 @@ HEAD
     close $diff_fh;
     print STDERR "  $diff_file\n";
     return $diff_file;
+}
+
+sub _do_or_die {
+    print STDERR "Do you want to continue? (y/n) ";
+    my $response = <STDIN>;
+    if ( $response =~ /^Y(?:ES)?$/i ) {
+        return;
+    }
+    elsif ( $response =~ /^N(?:O)?$/i ) {
+        print STDERR "Better luck next time...\n";
+        exit;
+    }
+    else {
+        _do_or_die();
+    }
 }
 
 sub _exit_code {
