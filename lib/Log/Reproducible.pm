@@ -160,9 +160,11 @@ sub reproduce {
     if ( $$current{'CMD'} =~ /\s-?-$reproduce_opt\s+(\S+)/ ) {
         my $old_repro_file = $1;
         $$current{'REPRODUCED'} = $old_repro_file;
-        $$current{'CMD'}
-            = _reproduce_cmd( $current, $prog, $prog_dir, $old_repro_file,
-            $repro_file, $argv_current, $categories, $warnings );
+        $$current{'CMD'} = _reproduce_cmd(
+            $current,    $prog, $prog_dir,     $old_repro_file,
+            $repro_file, $dir,  $argv_current, $categories,
+            $warnings,   $start
+        );
     }
     _archive_cmd( $current, $repro_file, $prog_dir, $start, $categories,
         $warnings );
@@ -253,9 +255,10 @@ sub _now {
 }
 
 sub _reproduce_cmd {
-    my ( $current, $prog, $prog_dir, $old_repro_file, $repro_file,
-        $argv_current, $categories, $warnings )
-        = @_;
+    my ($current,    $prog, $prog_dir,     $old_repro_file,
+        $repro_file, $dir,  $argv_current, $categories,
+        $warnings,   $start
+    ) = @_;
 
     open my $old_repro_fh, "<", $old_repro_file
         or die "Cannot open $old_repro_file for reading: $!\n";
@@ -271,7 +274,8 @@ sub _reproduce_cmd {
     print STDERR "Reproducing command: $cmd\n";
     _validate_prog_name( $archived_prog, $prog, @archived_argv );
     _validate_archived_info( \@archive, $current, $categories, $warnings );
-    _do_or_die() if scalar @$warnings > 0;
+    _do_or_die( $warnings, $old_repro_file, $repro_file, $dir, $prog, $start )
+        if scalar @$warnings > 0;
     return $cmd;
 }
 
@@ -438,25 +442,86 @@ sub _compare_archive_current {
 
     if ( $archived ne $current_value ) {
         my $warning_message = "Archived and current $key do NOT match";
-        push @$warnings, $warning_message;
+        push @$warnings,
+            {
+                message  => $warning_message,
+                archived => $archived,
+                current  => $current_value
+            };
         print STDERR "WARNING: $warning_message\n";
     }
 }
 
 sub _do_or_die {
+    my ( $warnings, $old_repro_file, $repro_file, $dir, $prog, $start ) = @_;
+
     print STDERR
         "\nThere are inconsistencies between archived and current conditions.\n";
     print STDERR
-        "This may affect reproducibility. Do you want to continue? (y/n) ";
+        "This may affect reproducibility. Do you want to continue? (y/n/d) ";
     my $response = <STDIN>;
     if ( $response =~ /^Y(?:ES)?$/i ) {
         return;
     }
     elsif ( $response =~ /^N(?:O)?$/i ) {
-        print "Better luck next time...\n";
+        print STDERR "Better luck next time...\n";
         exit;
     }
-    else { _do_or_die(); }
+    elsif ( $response =~ /^D(?:IFF)?$/i ) {
+        _repro_diff( $warnings, $old_repro_file, $repro_file, $dir, $prog,
+            $start )
+            and exit;
+        print STDERR <<ERR;
+
+ERROR:
+The Perl module Text::Diff needs to be installed to output the differences
+between archived and current conditions.
+
+    For more information, see:
+     • Installing Perl modules - http://www.cpan.org/modules/INSTALL.html
+     • Text::Diff module - https://metacpan.org/pod/Text::Diff
+
+ERR
+        exit;
+    }
+    else {
+        _do_or_die( $warnings, $old_repro_file, $repro_file, $dir, $prog,
+            $start );
+    }
+}
+
+sub _repro_diff {
+    my ( $warnings, $old_repro_file, $repro_file, $dir, $prog, $start ) = @_;
+
+    eval "use Text::Diff";
+    return 0 if $@;
+    require Text::Diff;
+
+    my ($old_timestamp) = $old_repro_file =~ /-(\d{8}\.\d{6})$/;
+    my $new_timestamp = $$start{'timestamp'};
+    my $diff_file = "$dir/rdiff-$prog-$old_timestamp.vs.$new_timestamp";
+    open my $diff_fh, ">", $diff_file;
+    print $diff_fh <<HEAD;
+The following inconsistencies between archived and current conditions were found when
+reproducing a run from an archive. These have the potential to affect reproducibility.
+------------------------------------------------------------------------------------------
+Archive: $old_repro_file
+Current: $repro_file
+------------------------------------------------------------------------------------------
+Note: This file is often best viewed with word wrapping disabled
+------------------------------------------------------------------------------------------
+
+HEAD
+    for my $alert (@$warnings) {
+        my $diff = diff( \$$alert{archived}, \$$alert{current},
+            { STYLE => "Table" } );
+        print $diff_fh $$alert{message}, "\n";
+        print $diff_fh $diff, "\n";
+    }
+    close $diff_fh;
+    print STDERR "Archived vs Current: $diff_file\n";
+
+    return 1;
 }
 
 sub _exit_code {
