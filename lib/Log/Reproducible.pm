@@ -461,14 +461,17 @@ sub _compare_archive_current {
                 archived => $archived,
                 current  => $current_value
             };
-        print STDERR "WARNING: $warning_message\n";
     }
 }
 
 sub _summarize_warnings {
     my ( $warnings, $old_repro_file, $repro_file, $dir, $prog, $start ) = @_;
     my $diff_file;
-    if ( scalar @$warnings > 0 ) {
+    if (@$warnings) {
+        print STDERR "\n";
+        for my $alert (@$warnings) {
+            print STDERR "WARNING: $$alert{message}\n";
+        }
         print STDERR <<EOF;
 
 There are inconsistencies between the archived and current conditions.
