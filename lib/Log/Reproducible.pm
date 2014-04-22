@@ -274,8 +274,17 @@ sub _reproduce_cmd {
     print STDERR "Reproducing command: $cmd\n";
     _validate_prog_name( $archived_prog, $prog, @archived_argv );
     _validate_archived_info( \@archive, $current, $categories, $warnings );
-    _do_or_die( $warnings, $old_repro_file, $repro_file, $dir, $prog, $start )
-        if scalar @$warnings > 0;
+    if ( scalar @$warnings > 0 ) {
+        print STDERR <<EOF;
+
+There are inconsistencies between the archived and current conditions.
+These differences might affect reproducibility. A summary can be found at:
+EOF
+        _repro_diff( $warnings, $old_repro_file, $repro_file, $dir, $prog,
+            $start );
+        _do_or_die( $warnings, $old_repro_file, $repro_file, $dir, $prog,
+            $start );
+    }
     return $cmd;
 }
 
@@ -453,12 +462,7 @@ sub _compare_archive_current {
 }
 
 sub _do_or_die {
-    my ( $warnings, $old_repro_file, $repro_file, $dir, $prog, $start ) = @_;
-
-    print STDERR
-        "\nThere are inconsistencies between archived and current conditions.\n";
-    print STDERR
-        "This may affect reproducibility. Do you want to continue? (y/n/d) ";
+    print STDERR "Do you want to continue? (y/n) ";
     my $response = <STDIN>;
     if ( $response =~ /^Y(?:ES)?$/i ) {
         return;
@@ -467,26 +471,8 @@ sub _do_or_die {
         print STDERR "Better luck next time...\n";
         exit;
     }
-    elsif ( $response =~ /^D(?:IFF)?$/i ) {
-        _repro_diff( $warnings, $old_repro_file, $repro_file, $dir, $prog,
-            $start )
-            and exit;
-        print STDERR <<ERR;
-
-ERROR:
-The Perl module Text::Diff needs to be installed to output the differences
-between archived and current conditions.
-
-    For more information, see:
-     • Installing Perl modules - http://www.cpan.org/modules/INSTALL.html
-     • Text::Diff module - https://metacpan.org/pod/Text::Diff
-
-ERR
-        exit;
-    }
     else {
-        _do_or_die( $warnings, $old_repro_file, $repro_file, $dir, $prog,
-            $start );
+        _do_or_die();
     }
 }
 
@@ -494,7 +480,11 @@ sub _repro_diff {
     my ( $warnings, $old_repro_file, $repro_file, $dir, $prog, $start ) = @_;
 
     eval "use Text::Diff";
-    return 0 if $@;
+    if ($@) {
+        print STDERR
+            "  Uh oh, you need to install Text::Diff to see the summary! (http://www.cpan.org/modules/INSTALL.html)\n";
+        return;
+    }
     require Text::Diff;
 
     my ($old_timestamp) = $old_repro_file =~ /-(\d{8}\.\d{6})$/;
@@ -519,9 +509,7 @@ HEAD
         print $diff_fh $diff, "\n";
     }
     close $diff_fh;
-    print STDERR "Archived vs Current: $diff_file\n";
-
-    return 1;
+    print STDERR "  $diff_file\n";
 }
 
 sub _exit_code {
