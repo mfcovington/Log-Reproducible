@@ -157,17 +157,18 @@ sub reproduce {
     my $warnings = [];
 
     my $reproduce_opt = $$repro_opts{reproduce};
+    my $diff_file;
     if ( $$current{'CMD'} =~ /\s-?-$reproduce_opt\s+(\S+)/ ) {
         my $old_repro_file = $1;
         $$current{'REPRODUCED'} = $old_repro_file;
-        $$current{'CMD'} = _reproduce_cmd(
+        ( $$current{'CMD'}, $diff_file ) = _reproduce_cmd(
             $current,    $prog, $prog_dir,     $old_repro_file,
             $repro_file, $dir,  $argv_current, $categories,
             $warnings,   $start
         );
     }
     _archive_cmd( $current, $repro_file, $prog_dir, $start, $categories,
-        $warnings );
+        $warnings, $diff_file );
     _exit_code( $repro_file, $start );
 }
 
@@ -274,24 +275,27 @@ sub _reproduce_cmd {
     print STDERR "Reproducing command: $cmd\n";
     _validate_prog_name( $archived_prog, $prog, @archived_argv );
     _validate_archived_info( \@archive, $current, $categories, $warnings );
+
+    my $diff_file;
     if ( scalar @$warnings > 0 ) {
         print STDERR <<EOF;
 
 There are inconsistencies between the archived and current conditions.
 These differences might affect reproducibility. A summary can be found at:
 EOF
-        _repro_diff( $warnings, $old_repro_file, $repro_file, $dir, $prog,
-            $start );
+        $diff_file
+            = _repro_diff( $warnings, $old_repro_file, $repro_file, $dir,
+            $prog, $start );
         _do_or_die( $warnings, $old_repro_file, $repro_file, $dir, $prog,
             $start );
     }
-    return $cmd;
+    return $cmd, $diff_file;
 }
 
 sub _archive_cmd {
-    my ( $current, $repro_file, $prog_dir, $start, $categories, $warnings )
-        = @_;
-    my $error_summary = join "\n", @$warnings;
+    my ($current,    $repro_file, $prog_dir, $start,
+        $categories, $warnings,   $diff_file
+    ) = @_;
 
     open my $repro_fh, ">", $repro_file
         or die "Cannot open $repro_file for writing: $!";
@@ -299,6 +303,7 @@ sub _archive_cmd {
 
     _add_archive_comment( $_, $$current{$_}, $repro_fh )
         for @{ $$categories{'script'} };
+    _add_warnings( $warnings, $diff_file, $repro_fh ) if @$warnings;
     _add_divider($repro_fh);
     _add_archive_comment( $_, $$current{$_}, $repro_fh )
         for @{ $$categories{'system'} };
@@ -375,6 +380,16 @@ sub _add_archive_comment {
         my @comment_lines = split /\n/, $comment;
         print $repro_fh "#$title: $_\n" for @comment_lines;
     }
+}
+
+sub _add_warnings {
+    my ( $warnings, $diff_file, $repro_fh ) = @_;
+    print $repro_fh _divider_message();
+    print $repro_fh _divider_message("FOUND DIFFERENCES BETWEEN ARCHIVE AND CURRENT CONDITIONS");
+    print $repro_fh _divider_message();
+    _add_archive_comment( 'DIFFSUMMARY', $diff_file, $repro_fh );
+    _add_archive_comment( 'WARNINGS', $$_{message}, $repro_fh )
+        for @$warnings;
 }
 
 sub _add_divider {
@@ -510,6 +525,7 @@ HEAD
     }
     close $diff_fh;
     print STDERR "  $diff_file\n";
+    return $diff_file;
 }
 
 sub _exit_code {
