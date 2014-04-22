@@ -406,7 +406,7 @@ sub _divider_message {
         my $msg_len = length($message) + 2;
         my $pad     = ( $width - $msg_len ) / 2;
         $message
-            = $pad > 0
+            = $pad > 1
             ? join " ", "#" x ceil($pad), $message, "#" x floor($pad)
             : "# $message #";
     }
