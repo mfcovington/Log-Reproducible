@@ -384,7 +384,7 @@ sub _add_warnings {
 sub _add_divider {
     my $repro_fh = shift;
     print $repro_fh _divider_message();
-    print $repro_fh _divider_message("GOTO END OF FILE FOR EXIT CODE INFO.");
+    print $repro_fh _divider_message("GOTO END OF FILE FOR EXIT CODE INFO");
     print $repro_fh _divider_message();
 }
 
@@ -408,7 +408,7 @@ sub _divider_message {
         $message
             = $pad > 0
             ? join " ", "#" x ceil($pad), $message, "#" x floor($pad)
-            : $message;
+            : "# $message #";
     }
     else {
         $message = "#" x $width;
