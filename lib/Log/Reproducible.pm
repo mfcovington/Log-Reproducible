@@ -219,7 +219,8 @@ sub _set_dir {
 
 sub _parse_command {
     my ( $current, $full_prog_name, $repronote_opt, $argv_current ) = @_;
-    $$current{'NOTE'} = _get_repro_arg( $repronote_opt, $argv_current );
+    my $note = _get_repro_arg( $repronote_opt, $argv_current );
+    $$current{'NOTE'} = defined $note ? $note : '_' x 73;
     for (@$argv_current) {
         $_ = "'$_'" if /\s/;
     }

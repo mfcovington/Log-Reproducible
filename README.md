@@ -50,6 +50,7 @@ For example, running the script `sample.pl` would result in an archive file name
 If it was run as `perl bin/sample.pl -a 1 -b 2 -c 3 OTHER ARGUMENTS`, the contents of the archive file would look something like:
 
     sample.pl -a 1 -b 2 -c 3 OTHER ARGUMENTS
+    #NOTE: _________________________________________________________________________
     #WHEN: at HH:MM:SS on weekday month day, year
     #WORKDIR: /path/to/working/dir
     #SCRIPTDIR: bin (/path/to/working/dir/bin)
