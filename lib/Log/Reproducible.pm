@@ -57,6 +57,7 @@ EOF
 sub _check_for_potentially_conflicting_modules {
     my $code = do { open my $fh, '<', $0 or return; local $/; <$fh> };
     my ($code_to_test) = $code =~ /(\A .*?) use \s+ @{[__PACKAGE__]}/sx;
+    return unless defined $code_to_test;    # Required for standalone perlr
     my ( $temp_fh, $temp_filename ) = File::Temp::tempfile();
     print $temp_fh $code_to_test;
 
