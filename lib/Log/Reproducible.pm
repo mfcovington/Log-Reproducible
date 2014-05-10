@@ -14,7 +14,7 @@ use Config;
 # TODO: Standalone script that can be used upstream of any command line functions
 # TODO: Auto-build README using POD
 
-our $VERSION = '0.9.0';
+our $VERSION = '0.9.1';
 
 =head1 NAME
 
