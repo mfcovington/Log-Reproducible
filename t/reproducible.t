@@ -13,6 +13,7 @@ use Cwd;
 
 # TODO: Account for systems with REPRO_DIR environmental variable set
 # TODO: Need to update tests to account for new features
+# TODO: Add tests for 'perlr'
 
 BEGIN {
     require_ok('Log::Reproducible')

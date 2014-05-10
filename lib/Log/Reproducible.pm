@@ -14,7 +14,7 @@ use Config;
 # TODO: Standalone script that can be used upstream of any command line functions
 # TODO: Auto-build README using POD
 
-our $VERSION = '0.9.0';
+our $VERSION = '0.9.1';
 
 =head1 NAME
 
@@ -57,6 +57,7 @@ EOF
 sub _check_for_potentially_conflicting_modules {
     my $code = do { open my $fh, '<', $0 or return; local $/; <$fh> };
     my ($code_to_test) = $code =~ /(\A .*?) use \s+ @{[__PACKAGE__]}/sx;
+    return unless defined $code_to_test;    # Required for standalone perlr
     my ( $temp_fh, $temp_filename ) = File::Temp::tempfile();
     print $temp_fh $code_to_test;
 
@@ -218,7 +219,8 @@ sub _set_dir {
 
 sub _parse_command {
     my ( $current, $full_prog_name, $repronote_opt, $argv_current ) = @_;
-    $$current{'NOTE'} = _get_repro_arg( $repronote_opt, $argv_current );
+    my $note = _get_repro_arg( $repronote_opt, $argv_current );
+    $$current{'NOTE'} = defined $note ? $note : '_' x 73;
     for (@$argv_current) {
         $_ = "'$_'" if /\s/;
     }

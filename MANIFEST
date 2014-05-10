@@ -11,3 +11,4 @@ t/reproducible.t
 t/test-reproducible.pl
 META.yml
 META.json
+script/perlr

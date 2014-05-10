@@ -1,4 +1,4 @@
-# Log::Reproducible (0.9.0)
+# Log::Reproducible (0.9.1)
 
 Increase your reproducibility with the Perl module Log::Reproducible. 
 
@@ -19,6 +19,8 @@ How does Log::Reproducible increase reproducibility?
 
 ### Creating Archives
 
+#### With the Log::Reproducible module
+
 Just add a single line near the top of your Perl script before accessing `@ARGV`, calling a module that manipulates `@ARGV`, or processing command line options with a module like [Getopt::Long](http://perldoc.perl.org/Getopt/Long.html):
 
 ```perl
@@ -28,6 +30,14 @@ use Log::Reproducible;
 That's all!
 
 Now, every time you run your script, the command line options and other arguments passed to it will be archived in a simple log file whose name reflects the script and the date/time it began running.
+
+#### Without the perlr wrapper
+
+Can't or don't want to modify your script? When you install Log::Reproducible, a wrapper program called `perlr` gets installed in your path. Running scripts with `perlr` automatically loads Log::Reproducible even if your script doesn't. 
+
+```sh
+perlr script-without-log-reproducible.pl
+```
 
 #### Other Archive Contents
 
@@ -50,13 +60,14 @@ For example, running the script `sample.pl` would result in an archive file name
 If it was run as `perl bin/sample.pl -a 1 -b 2 -c 3 OTHER ARGUMENTS`, the contents of the archive file would look something like:
 
     sample.pl -a 1 -b 2 -c 3 OTHER ARGUMENTS
+    #NOTE: _________________________________________________________________________
     #WHEN: at HH:MM:SS on weekday month day, year
     #WORKDIR: /path/to/working/dir
     #SCRIPTDIR: bin (/path/to/working/dir/bin)
     ################################################################################
     ##################### GOTO END OF FILE FOR EXIT CODE INFO. #####################
     ################################################################################
-    #ARCHIVERSION: 0.9.0
+    #ARCHIVERSION: 0.9.1
     #PERLVERSION: v5.18.2
     #PERLPATH: /path/to/bin/perl
     #PERLINC: /path/to/perl/lib:/path/to/another/perl/lib:.
@@ -91,7 +102,9 @@ This results in:
 
 When reproducing an archived analysis, warnings will be issued if the current Perl-, Git-, or ENV-related info fails to match that of the archive. Such inconsistencies are potential indicators that an archived analysis will not be reproduced in a faithful manner.
 
-After the warnings have been displayed, there is a prompt for whether to continue reproducing the archived analysis. If the user chooses to continue, all warnings will be logged in the new archive.
+If the Perl module [Text::Diff](https://metacpan.org/pod/Text::Diff) is installed, a summary of differences between archived and current conditions will be written to a file that looks something like: `repro-archive/rdiff-sample.pl-YYYYMMDD.HHMMSS.vs.YYYYMMDD.HHMMSS`
+
+After the warnings have been displayed, there is a prompt for whether to continue reproducing the archived analysis. If the user chooses to continue, all warnings and the path to the difference summary will be logged in the new archive.
 
 If the current script name does not match the archived script name, the reproduced analysis will immediately fail (with instructions on how to proceed).
 

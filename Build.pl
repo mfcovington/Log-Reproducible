@@ -7,6 +7,7 @@ use Module::Build;
 # TODO: Add perl + version to requirements
 
 my $module_file = "lib/Log/Reproducible.pm";
+my @scripts = grep { -f and !-d } glob 'script/*';
 
 eval "use Pod::Markdown";
 if ( ! $@ ) {
@@ -41,6 +42,7 @@ my $builder = Module::Build->new(
         'Pod::Markdown'  => 0,    # To auto-generate README from POD markup
         'Text::Diff'     => 0,    # To summarize Archived vs Current differences
     },
+    script_files   => [ @scripts ],
 );
 
 $builder->create_build_script;

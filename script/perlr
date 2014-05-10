@@ -1,0 +1,7 @@
+#! perl
+use strict;
+use warnings;
+
+die "perlr requires at least one argument (a Perl script)\n"
+    if scalar @ARGV == 0;
+system("perl -MLog::Reproducible @ARGV");
