@@ -1,4 +1,4 @@
-# Log::Reproducible (0.9.1)
+# Log::Reproducible (0.9.2)
 
 Increase your reproducibility with the Perl module Log::Reproducible. 
 
@@ -19,7 +19,7 @@ How does Log::Reproducible increase reproducibility?
 
 ### Creating Archives
 
-#### With the Log::Reproducible module
+#### With the `Log::Reproducible` module
 
 Just add a single line near the top of your Perl script before accessing `@ARGV`, calling a module that manipulates `@ARGV`, or processing command line options with a module like [Getopt::Long](http://perldoc.perl.org/Getopt/Long.html):
 
@@ -31,7 +31,7 @@ That's all!
 
 Now, every time you run your script, the command line options and other arguments passed to it will be archived in a simple log file whose name reflects the script and the date/time it began running.
 
-#### Without the perlr wrapper
+#### With the `perlr` wrapper
 
 Can't or don't want to modify your script? When you install Log::Reproducible, a wrapper program called `perlr` gets installed in your path. Running scripts with `perlr` automatically loads Log::Reproducible even if your script doesn't. 
 
@@ -67,7 +67,7 @@ If it was run as `perl bin/sample.pl -a 1 -b 2 -c 3 OTHER ARGUMENTS`, the conten
     ################################################################################
     ##################### GOTO END OF FILE FOR EXIT CODE INFO. #####################
     ################################################################################
-    #ARCHIVERSION: 0.9.1
+    #ARCHIVERSION: 0.9.2
     #PERLVERSION: v5.18.2
     #PERLPATH: /path/to/bin/perl
     #PERLINC: /path/to/perl/lib:/path/to/another/perl/lib:.

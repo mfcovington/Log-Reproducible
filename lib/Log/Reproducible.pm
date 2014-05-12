@@ -14,7 +14,7 @@ use Config;
 # TODO: Standalone script that can be used upstream of any command line functions
 # TODO: Auto-build README using POD
 
-our $VERSION = '0.9.1';
+our $VERSION = '0.9.2';
 
 =head1 NAME
 
@@ -245,6 +245,7 @@ sub _set_repro_file {
     my $start = _now();
     $$current{'STARTED'} = $$start{'when'};
     my $repro_file = "$dir/rlog-$prog-" . $$start{'timestamp'};
+    _is_file_unique( \$repro_file );
     return $repro_file, $start;
 }
 
@@ -255,6 +256,21 @@ sub _now {
     $now{'when'}      = strftime "at %X on %a %b %d, %Y", @localtime;
     $now{'seconds'}   = time();
     return \%now;
+}
+
+sub _is_file_unique {
+    my $file = shift;
+    return if !-e $$file;
+
+    my ( $base, $counter ) = $$file =~ /(.+\d{8}\.\d{6})(?:\.(\d{3}$))?/;
+    if ( defined $counter ) {
+        $counter++;
+    }
+    else {
+        $counter = "001";
+    }
+    $$file = "$base.$counter";
+    _is_file_unique($file);
 }
 
 sub _reproduce_cmd {
@@ -498,9 +514,10 @@ sub _repro_diff {
     }
     require Text::Diff;
 
-    my ($old_timestamp) = $old_repro_file =~ /-(\d{8}\.\d{6})$/;
+    my ($old_timestamp) = $old_repro_file =~ /-(\d{8}\.\d{6}(?:\.\d{3})?)$/;
     my $new_timestamp = $$start{'timestamp'};
     my $diff_file = "$dir/rdiff-$prog-$old_timestamp.vs.$new_timestamp";
+    _is_file_unique( \$diff_file );
     open my $diff_fh, ">", $diff_file;
     print $diff_fh <<HEAD;
 The following inconsistencies between archived and current conditions were found when
