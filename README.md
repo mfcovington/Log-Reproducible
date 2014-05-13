@@ -1,4 +1,4 @@
-# Log::Reproducible (0.9.2)
+# Log::Reproducible (0.10.0)
 
 Increase your reproducibility with the Perl module Log::Reproducible. 
 
@@ -67,7 +67,7 @@ If it was run as `perl bin/sample.pl -a 1 -b 2 -c 3 OTHER ARGUMENTS`, the conten
     ################################################################################
     ##################### GOTO END OF FILE FOR EXIT CODE INFO. #####################
     ################################################################################
-    #ARCHIVERSION: 0.9.2
+    #ARCHIVERSION: 0.10.0
     #PERLVERSION: v5.18.2
     #PERLPATH: /path/to/bin/perl
     #PERLINC: /path/to/perl/lib
