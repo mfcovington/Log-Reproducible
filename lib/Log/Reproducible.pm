@@ -150,9 +150,9 @@ sub reproduce {
             'WORKDIR', 'SCRIPTDIR'
         ],
         system => [
-            'ARCHIVERSION', 'PERLVERSION', 'PERLPATH',      'PERLINC',
-            'GITCOMMIT',    'GITSTATUS',   'GITDIFFSTAGED', 'GITDIFF',
-            'ENV'
+            'ARCHIVERSION', 'PERLVERSION', 'PERLPATH',  'PERLINC',
+            'PERLMODULES',  'GITCOMMIT',   'GITSTATUS', 'GITDIFFSTAGED',
+            'GITDIFF',      'ENV'
         ],
     };
     my $warnings = [];
@@ -353,6 +353,45 @@ sub _perl_info {
     $$current{'PERLPATH'}    = $Config{perlpath};
     $$current{'PERLVERSION'} = sprintf "v%vd", $^V;
     $$current{'PERLINC'}     = join "\n", @INC;
+    $$current{'PERLMODULES'} = _loaded_perl_module_versions();
+}
+
+sub _loaded_perl_module_versions {
+    my $code_to_test = do { open my $fh, '<', $0 or return; local $/; <$fh> };
+    my ($package) = @{ [__PACKAGE__] };
+    $code_to_test =~ s/use\s+$package[^;]*;//g;
+    my ( $temp_fh, $temp_filename ) = File::Temp::tempfile();
+    print $temp_fh $code_to_test;
+
+    local ( *CIN, *COUT, *CERR );
+    my $perl = $Config{perlpath};
+    my $cmd  = "$perl -MO=Xref $temp_filename";
+    my $pid  = open3( \*CIN, \*COUT, \*CERR, $cmd );
+    my %loaded_modules;
+    for (<COUT>) {
+        next unless my ($mod) = $_ =~ /^\s*Package\s*([^\s]+)\s*$/;
+        next if $mod =~ /[()]/;
+        next unless $mod =~ /\w/;
+        $loaded_modules{$mod} = 1;
+    }
+    waitpid $pid, 0;
+    File::Temp::unlink0( $temp_fh, $temp_filename )
+        or warn "Error unlinking file $temp_filename safely";
+
+    my @module_versions;
+    my $NOWARN = 0;
+    $SIG{'__WARN__'} = sub { warn $_[0] unless $NOWARN };
+    for my $mod ( sort keys %loaded_modules ) {
+        $NOWARN = 1;
+        eval "require $mod";
+        next if $@;
+        my $version = $mod->VERSION;
+        $NOWARN = 0;
+        next unless defined $version;
+        push @module_versions, "$mod $version";
+    }
+    $NOWARN = 0;
+    return join "\n", @module_versions;
 }
 
 sub _dir_info {
