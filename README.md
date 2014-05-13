@@ -1,4 +1,4 @@
-# Log::Reproducible (0.9.2)
+# Log::Reproducible (0.10.0)
 
 Increase your reproducibility with the Perl module Log::Reproducible. 
 
@@ -48,7 +48,7 @@ Also included in the archive are (in order):
 - the working directory
 - the directory containing the script
 - archive version (i.e., Log::Reproducible version)
-- Perl-related info (version, path to perl, and `@INC`)
+- Perl-related info (version, path to perl, `@INC`, and module versions)
 - Git repository info, if applicable (see [Git Repo Info](#git-repo-info), below)
 - environmental variables and their values (`%ENV`)
 - the exit code
@@ -67,10 +67,13 @@ If it was run as `perl bin/sample.pl -a 1 -b 2 -c 3 OTHER ARGUMENTS`, the conten
     ################################################################################
     ##################### GOTO END OF FILE FOR EXIT CODE INFO. #####################
     ################################################################################
-    #ARCHIVERSION: 0.9.2
+    #ARCHIVERSION: 0.10.0
     #PERLVERSION: v5.18.2
     #PERLPATH: /path/to/bin/perl
-    #PERLINC: /path/to/perl/lib:/path/to/another/perl/lib:.
+    #PERLINC: /path/to/perl/lib
+    #PERLINC: /path/to/another/perl/lib
+    #PERLMODULES: Some::Module 0.12
+    #PERLMODULES: Another::Module 43.08
     #ENV: PATH:/usr/local/bin:/paths/to/more/bins
     ...
     #ENV: _system_name:OSX
