@@ -452,11 +452,19 @@ sub _add_warnings {
     my ( $current, $warnings, $old_repro_file, $diff_file ) = @_;
 
     my @warning_messages = map { $$_{message} } @$warnings;
-    $$current{'REPRODUCED'} = [
-        { 'REPRODUCED COMMAND' => $old_repro_file },
-        { 'WARNINGS'           => [@warning_messages] },
-        { 'DIFF FILE'          => $diff_file }
-    ];
+    if ( scalar @warning_messages > 0 ) {
+        $$current{'REPRODUCED'} = [
+            { 'REPRODUCED COMMAND' => $old_repro_file },
+            { 'WARNINGS'           => [@warning_messages] },
+            { 'DIFF FILE'          => $diff_file }
+        ];
+    }
+    else {
+        $$current{'REPRODUCED'} = [
+            { 'REPRODUCED COMMAND' => $old_repro_file },
+            { 'WARNINGS'           => 'NONE' },
+        ];
+    }
 }
 
 sub _dump_yaml_to_archive_manually {
