@@ -146,19 +146,16 @@ sub _reproducibility_is_important {
     _get_current_state( $current, $prog_dir );
 
     my $reproduce_opt = $$repro_opts{reproduce};
-    my $diff_file;
     my $warnings = [];
     if ( $$current{'CMD'} =~ /\s-?-$reproduce_opt\s+(\S+)/ ) {
         my $old_repro_file = $1;
-        ( $$current{'CMD'}, $diff_file ) = _reproduce_cmd(
+        $$current{'CMD'} = _reproduce_cmd(
             $current,        $prog,       $prog_dir,
             $old_repro_file, $repro_file, $dir,
             $argv_current,   $warnings,   $start
         );
-        _add_warnings( $current, $warnings, $old_repro_file, $diff_file );
     }
-    _archive_cmd( $current, $repro_file, $prog_dir, $start, $warnings,
-        $diff_file );
+    _archive_cmd( $current, $repro_file, $prog_dir, $start, $warnings );
     _exit_code( $repro_file, $start );
 }
 
@@ -289,12 +286,12 @@ sub _reproduce_cmd {
     my $diff_file
         = _summarize_warnings( $warnings, $old_repro_file, $repro_file, $dir,
         $prog, $start );
-    return $cmd, $diff_file;
+    _add_warnings( $current, $warnings, $old_repro_file, $diff_file );
+    return $cmd;
 }
 
 sub _archive_cmd {
-    my ( $current, $repro_file, $prog_dir, $start, $warnings, $diff_file )
-        = @_;
+    my ( $current, $repro_file, $prog_dir, $start, $warnings ) = @_;
 
     open my $repro_fh, ">", $repro_file
         or die "Cannot open $repro_file for writing: $!";
