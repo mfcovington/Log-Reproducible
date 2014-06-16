@@ -116,7 +116,7 @@ BEGIN {
 
 sub import {
     my ( $pkg, $custom_repro_opts ) = @_;
-    reproduce($custom_repro_opts);
+    _reproducibility_is_important($custom_repro_opts);
 }
 
 sub _first_index (&@) {    # From v0.33 of the wonderful List::MoreUtils
@@ -128,7 +128,7 @@ sub _first_index (&@) {    # From v0.33 of the wonderful List::MoreUtils
     return -1;
 }
 
-sub reproduce {
+sub _reproducibility_is_important {
     my $custom_repro_opts = shift;
 
     my $repro_opts     = _parse_custom_repro_opts($custom_repro_opts);
