@@ -451,6 +451,9 @@ sub _dump_yaml_to_archive {
 sub _add_warnings {
     my ( $current, $warnings, $old_repro_file, $diff_file ) = @_;
 
+    $diff_file
+        = "Text::Diff needs to be installed to create summary of archive vs. current differences"
+        unless defined $diff_file;
     my @warning_messages = map { $$_{message} } @$warnings;
     if ( scalar @warning_messages > 0 ) {
         $$current{'REPRODUCED'} = [
