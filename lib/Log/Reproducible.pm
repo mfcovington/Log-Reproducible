@@ -454,14 +454,14 @@ sub _add_warnings {
     my @warning_messages = map { $$_{message} } @$warnings;
     if ( scalar @warning_messages > 0 ) {
         $$current{'REPRODUCED'} = [
-            { 'REPRODUCED COMMAND' => $old_repro_file },
+            { 'REPRODUCED ARCHIVE' => $old_repro_file },
             { 'WARNINGS'           => [@warning_messages] },
             { 'DIFF FILE'          => $diff_file }
         ];
     }
     else {
         $$current{'REPRODUCED'} = [
-            { 'REPRODUCED COMMAND' => $old_repro_file },
+            { 'REPRODUCED ARCHIVE' => $old_repro_file },
             { 'WARNINGS'           => 'NONE' },
         ];
     }
