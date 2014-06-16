@@ -8,7 +8,7 @@ use File::Temp ();
 use IPC::Open3;
 use POSIX qw(strftime difftime ceil floor);
 use Config;
-use YAML::Old;    # YAML::XS & YAML::Syck aren't working properly
+use YAML::Old qw(Dump LoadFile);    # YAML::XS & YAML::Syck aren't working properly
 
 # TODO: Add tests for conflicting module checker
 # TODO: Add verbose (or silent) option
@@ -279,20 +279,25 @@ sub _reproduce_cmd {
         $warnings,   $start
     ) = @_;
 
-    open my $old_repro_fh, "<", $old_repro_file
-        or die "Cannot open $old_repro_file for reading: $!\n";
-    my @archive = <$old_repro_fh>;
-    chomp @archive;
-    close $old_repro_fh;
+    my $raw_archived_state = LoadFile($old_repro_file);
 
-    my $cmd = $archive[0];
+    # Convert array of single-key hashes to single multi-key hash
+    my %archived_state;
+    for (@$raw_archived_state) {
+        my (@keys) = keys $_;
+        die "Something is wrong..." if scalar @keys != 1;
+        $archived_state{$keys[0]} = $$_{$keys[0]};
+    }
+
+    my $cmd = $archived_state{'COMMAND'};
+
     my ( $archived_prog, @archived_argv )
         = $cmd =~ /((?:\'[^']+\')|(?:\"[^"]+\")|(?:\S+))/g;
     @$argv_current = @archived_argv;
     print STDERR "Reproducing archive: $old_repro_file\n";
     print STDERR "Reproducing command: $cmd\n";
     _validate_prog_name( $archived_prog, $prog, @archived_argv );
-    _validate_archived_info( \@archive, $current, $categories, $warnings );
+    _validate_archived_info( \%archived_state, $current, $categories, $warnings );
     my $diff_file
         = _summarize_warnings( $warnings, $old_repro_file, $repro_file, $dir,
         $prog, $start );
@@ -513,38 +518,80 @@ EOF
 }
 
 sub _validate_archived_info {
-    my ( $archive_lines, $current, $categories, $warnings ) = @_;
+    my ( $archived_state, $current, $categories, $warnings ) = @_;
 
-    for ( @{ $$categories{'system'} } ) {
-        my ($archived) = _extract_from_archive( $archive_lines, $_ );
-        _compare_archive_current( $archived, $current, $_, $warnings );
+    for my $group (qw(PERL GIT)) {
+        _compare_archive_current_array_or_string( $archived_state, $current,
+            $group, $warnings );
+    }
+    _compare_archive_current_hash( $archived_state, $current, 'ENV',
+        $warnings );
+}
+
+sub _compare_archive_current_hash {
+    my ( $archive, $current, $key, $warnings ) = @_;
+
+    my @arc_array = map {"$_: $$archive{$key}{$_}"} sort keys $$archive{$key};
+    my @cur_array = map {"$_: $$current{$key}{$_}"} sort keys $$current{$key};
+    if ( join( "", @arc_array ) ne join( "", @cur_array ) ) {
+        push @$warnings,
+            {
+            message => "Archived and current $key do NOT match",
+            archive => \@arc_array,
+            current => \@cur_array
+            };
     }
 }
 
-sub _extract_from_archive {
-    my ( $archive_lines, $key ) = @_;
+sub _compare_archive_current_array_or_string {
+    my ( $archive, $current, $group, $warnings ) = @_;
 
-    my @values = grep {/^#$key: /} @$archive_lines;
-    $_ =~ s/^#$key: // for @values;
+    for ( 0 .. $#{ $$archive{$group} } ) {
+        my %archive_subgroup;
+        my %current_subgroup;
+        my ( $arc_key, $too_many_ak ) = keys $$archive{$group}->[$_];
+        my ( $cur_key, $too_many_ck ) = keys $$current{$group}->[$_];
 
-    return join "\n", @values;
-}
+        die "Something is wrong..."
+            if $arc_key ne $cur_key
+            || defined $too_many_ak
+            || defined $too_many_ck;
 
-sub _compare_archive_current {
-    my ( $archived, $current, $key, $warnings ) = @_;
-    my $current_value = $$current{$key};
-    return unless defined $current_value;
-    chomp $current_value;
-    chomp $archived;
+        $archive_subgroup{$arc_key} = $$archive{$group}->[$_]{$arc_key};
+        $current_subgroup{$cur_key} = $$current{$group}->[$_]{$cur_key};
 
-    if ( $archived ne $current_value ) {
-        my $warning_message = "Archived and current $key do NOT match";
-        push @$warnings,
+        if (   !ref( $archive_subgroup{$arc_key} )
+            && !ref( $current_subgroup{$cur_key} ) )
+        {
+            if ( $archive_subgroup{$arc_key} ne $current_subgroup{$cur_key} )
             {
-                message  => $warning_message,
-                archived => $archived,
-                current  => $current_value
-            };
+                push @$warnings,
+                    {
+                    message =>
+                        "Archived and current $group $cur_key do NOT match",
+                    archive => \$archive_subgroup{$arc_key},
+                    current => \$current_subgroup{$cur_key}
+                    };
+            }
+        }
+        elsif (ref( $archive_subgroup{$arc_key} ) eq "ARRAY"
+            && ref( $current_subgroup{$cur_key} ) eq "ARRAY" )
+        {
+            if (join( "", @{ $archive_subgroup{$arc_key} } ) ne
+                join( "", @{ $current_subgroup{$cur_key} } ) )
+            {
+                push @$warnings,
+                    {
+                    message =>
+                        "Archived and current $group $cur_key do NOT match",
+                    archive => $archive_subgroup{$arc_key},
+                    current => $current_subgroup{$cur_key}
+                    };
+            }
+        }
+        else {
+            die "Something is wrong...";
+        }
     }
 }
 
@@ -597,7 +644,7 @@ Note: This file is often best viewed with word wrapping disabled
 
 HEAD
     for my $alert (@$warnings) {
-        my $diff = diff( \$$alert{archived}, \$$alert{current},
+        my $diff = diff( $$alert{archive}, $$alert{current},
             { STYLE => "Table" } );
         print $diff_fh $$alert{message}, "\n";
         print $diff_fh $diff, "\n";
