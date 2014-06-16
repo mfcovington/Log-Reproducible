@@ -8,6 +8,7 @@ use File::Temp ();
 use IPC::Open3;
 use POSIX qw(strftime difftime ceil floor);
 use Config;
+use YAML::Old;    # YAML::XS & YAML::Syck aren't working properly
 
 # TODO: Add tests for conflicting module checker
 # TODO: Add verbose (or silent) option
@@ -161,12 +162,12 @@ sub reproduce {
     my $diff_file;
     if ( $$current{'CMD'} =~ /\s-?-$reproduce_opt\s+(\S+)/ ) {
         my $old_repro_file = $1;
-        $$current{'REPRODUCED'} = $old_repro_file;
         ( $$current{'CMD'}, $diff_file ) = _reproduce_cmd(
             $current,    $prog, $prog_dir,     $old_repro_file,
             $repro_file, $dir,  $argv_current, $categories,
             $warnings,   $start
         );
+        _add_warnings( $current, $warnings, $old_repro_file, $diff_file );
     }
     _archive_cmd( $current, $repro_file, $prog_dir, $start, $categories,
         $warnings, $diff_file );
@@ -219,8 +220,7 @@ sub _set_dir {
 
 sub _parse_command {
     my ( $current, $full_prog_name, $repronote_opt, $argv_current ) = @_;
-    my $note = _get_repro_arg( $repronote_opt, $argv_current );
-    $$current{'NOTE'} = defined $note ? $note : '_' x 73;
+    $$current{'NOTE'} = _get_repro_arg( $repronote_opt, $argv_current );
     for (@$argv_current) {
         $_ = "'$_'" if /\s/;
     }
@@ -306,14 +306,7 @@ sub _archive_cmd {
 
     open my $repro_fh, ">", $repro_file
         or die "Cannot open $repro_file for writing: $!";
-    print $repro_fh $$current{'CMD'}, "\n";
-
-    _add_archive_comment( $_, $$current{$_}, $repro_fh )
-        for @{ $$categories{'script'} };
-    _add_warnings( $warnings, $diff_file, $repro_fh ) if @$warnings;
-    _add_divider($repro_fh);
-    _add_archive_comment( $_, $$current{$_}, $repro_fh )
-        for @{ $$categories{'system'} };
+    _dump_yaml_to_archive($current, $repro_fh);
     _add_exit_code_preamble($repro_fh);
     close $repro_fh;
     print STDERR "Created new archive: $repro_file\n";
@@ -330,7 +323,7 @@ sub _get_current_state {
 
 sub _archive_version {
     my $current = shift;
-    $$current{'ARCHIVERSION'} = $VERSION;
+    $$current{'ARCHIVE VERSION'} = "@{[__PACKAGE__]} $VERSION";
 }
 
 sub _git_info {
@@ -342,10 +335,21 @@ sub _git_info {
     chomp $gitbranch;
 
     my $gitlog = `cd $prog_dir; git log -n1 --oneline;`;
-    $$current{'GITCOMMIT'}     = "$gitbranch $gitlog";
-    $$current{'GITSTATUS'}     = `cd $prog_dir; git status --short;`;
-    $$current{'GITDIFFSTAGED'} = `cd $prog_dir; git diff --cached;`;
-    $$current{'GITDIFF'}       = `cd $prog_dir; git diff;`;
+    chomp $gitlog;
+
+    my @status = `cd $prog_dir; git status --short;`;
+    chomp @status;
+
+    my $diffstaged = `cd $prog_dir; git diff --cached;`;
+    my $diff       = `cd $prog_dir; git diff;`;
+
+    $$current{'GIT'} = [
+        { 'BRANCH'     => $gitbranch },
+        { 'COMMIT'     => $gitlog },
+        { 'STATUS'     => \@status },
+        { 'DIFFSTAGED' => $diffstaged },
+        { 'DIFF'       => $diff }
+    ];
 }
 
 sub _perl_info {
@@ -354,6 +358,15 @@ sub _perl_info {
     $$current{'PERLVERSION'} = sprintf "v%vd", $^V;
     $$current{'PERLINC'}     = join "\n", @INC;
     $$current{'PERLMODULES'} = _loaded_perl_module_versions();
+    my $path = $Config{perlpath};
+    my $version = sprintf "v%vd", $^V;
+    my $modules = _loaded_perl_module_versions();
+    $$current{'PERL'} = [
+        { 'VERSION' => $version },
+        { 'PATH'    => $path },
+        { 'INC'     => [@INC] },
+        { 'MODULES' => [@$modules] }
+    ];
 }
 
 sub _loaded_perl_module_versions {
@@ -391,7 +404,7 @@ sub _loaded_perl_module_versions {
         push @module_versions, "$mod $version";
     }
     $NOWARN = 0;
-    return join "\n", @module_versions;
+    return \@module_versions;
 }
 
 sub _dir_info {
@@ -417,32 +430,46 @@ sub _dir_info {
 
 sub _env_info {
     my $current = shift;
-    $$current{'ENV'} = join "\n", map {"$_:$ENV{$_}"} sort keys %ENV;
+    $$current{'ENV'} = \%ENV;
 }
 
-sub _add_archive_comment {
-    my ( $title, $comment, $repro_fh ) = @_;
-    if ( defined $comment ) {
-        my @comment_lines = split /\n/, $comment;
-        print $repro_fh "#$title: $_\n" for @comment_lines;
+sub _dump_yaml_to_archive {
+    my ( $current, $repro_fh ) = @_;
+
+    my @to_yaml = (
+        { 'COMMAND' => $$current{'CMD'} },
+        { 'NOTE'    => $$current{'NOTE'} },
+    );
+    if ( exists $$current{'REPRODUCED'} ) {
+        push @to_yaml, { 'REPRODUCTION' => $$current{'REPRODUCED'} };
     }
+    push @to_yaml, { 'STARTED'         => $$current{'STARTED'} },
+                   { 'WORKDIR'         => $$current{'WORKDIR'} },
+                   { 'SCRIPTDIR'       => $$current{'SCRIPTDIR'} },
+                   { 'ARCHIVE VERSION' => $$current{'ARCHIVE VERSION'} },
+                   { 'PERL'            => $$current{'PERL'} };
+    if ( exists $$current{'GIT'} ) {
+        push @to_yaml, { 'GIT' => $$current{'GIT'} };
+    }
+    push @to_yaml, { 'ENV' => $$current{'ENV'} };
+
+    print $repro_fh Dump [@to_yaml];
 }
 
 sub _add_warnings {
-    my ( $warnings, $diff_file, $repro_fh ) = @_;
-    print $repro_fh _divider_message();
-    print $repro_fh _divider_message("FOUND DIFFERENCES BETWEEN ARCHIVE AND CURRENT CONDITIONS");
-    print $repro_fh _divider_message();
-    _add_archive_comment( 'DIFFSUMMARY', $diff_file, $repro_fh );
-    _add_archive_comment( 'WARNINGS', $$_{message}, $repro_fh )
-        for @$warnings;
+    my ( $current, $warnings, $old_repro_file, $diff_file ) = @_;
+
+    my @warning_messages = map { $$_{message} } @$warnings;
+    $$current{'REPRODUCED'} = [
+        { 'REPRODUCED COMMAND' => $old_repro_file },
+        { 'WARNINGS'           => [@warning_messages] },
+        { 'DIFF FILE'          => $diff_file }
+    ];
 }
 
-sub _add_divider {
-    my $repro_fh = shift;
-    print $repro_fh _divider_message();
-    print $repro_fh _divider_message("GOTO END OF FILE FOR EXIT CODE INFO");
-    print $repro_fh _divider_message();
+sub _dump_yaml_to_archive_manually {
+    my ( $title, $comment, $repro_fh ) = @_;
+    print $repro_fh "- $title: $comment\n";
 }
 
 sub _add_exit_code_preamble {
@@ -453,7 +480,7 @@ sub _add_exit_code_preamble {
     print $repro_fh _divider_message(
         "TYPICALLY: 0 == SUCCESS AND 255 == FAILURE");
     print $repro_fh _divider_message();
-    print $repro_fh "#EXITCODE: ";
+    print $repro_fh "- EXITCODE: ";    # line left incomplete until exit
 }
 
 sub _divider_message {
@@ -605,8 +632,9 @@ sub _exit_code {
         open my $repro_fh, ">>", $repro_file
             or die "Cannot open $repro_file for appending: $!";
         print $repro_fh "$?\n";    # This completes EXITCODE line
-        _add_archive_comment( "FINISHED", $$finish{'when'}, $repro_fh );
-        _add_archive_comment( "ELAPSED",  $elapsed,         $repro_fh );
+        _dump_yaml_to_archive_manually( "FINISHED", $$finish{'when'},
+            $repro_fh );
+        _dump_yaml_to_archive_manually( "ELAPSED", $elapsed, $repro_fh );
         close $repro_fh;
     }
 }
