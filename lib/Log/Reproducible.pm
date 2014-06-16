@@ -145,32 +145,20 @@ sub reproduce {
     my ( $repro_file, $start ) = _set_repro_file( $current, $dir, $prog );
     _get_current_state( $current, $prog_dir );
 
-    my $categories = {
-        script => [
-            'NOTE',    'REPRODUCED', 'REPROWARNING', 'STARTED',
-            'WORKDIR', 'SCRIPTDIR'
-        ],
-        system => [
-            'ARCHIVERSION', 'PERLVERSION', 'PERLPATH',  'PERLINC',
-            'PERLMODULES',  'GITCOMMIT',   'GITSTATUS', 'GITDIFFSTAGED',
-            'GITDIFF',      'ENV'
-        ],
-    };
-    my $warnings = [];
-
     my $reproduce_opt = $$repro_opts{reproduce};
     my $diff_file;
+    my $warnings = [];
     if ( $$current{'CMD'} =~ /\s-?-$reproduce_opt\s+(\S+)/ ) {
         my $old_repro_file = $1;
         ( $$current{'CMD'}, $diff_file ) = _reproduce_cmd(
-            $current,    $prog, $prog_dir,     $old_repro_file,
-            $repro_file, $dir,  $argv_current, $categories,
-            $warnings,   $start
+            $current,        $prog,       $prog_dir,
+            $old_repro_file, $repro_file, $dir,
+            $argv_current,   $warnings,   $start
         );
         _add_warnings( $current, $warnings, $old_repro_file, $diff_file );
     }
-    _archive_cmd( $current, $repro_file, $prog_dir, $start, $categories,
-        $warnings, $diff_file );
+    _archive_cmd( $current, $repro_file, $prog_dir, $start, $warnings,
+        $diff_file );
     _exit_code( $repro_file, $start );
 }
 
@@ -274,9 +262,9 @@ sub _is_file_unique {
 }
 
 sub _reproduce_cmd {
-    my ($current,    $prog, $prog_dir,     $old_repro_file,
-        $repro_file, $dir,  $argv_current, $categories,
-        $warnings,   $start
+    my ($current,        $prog,       $prog_dir,
+        $old_repro_file, $repro_file, $dir,
+        $argv_current,   $warnings,   $start
     ) = @_;
 
     my $raw_archived_state = LoadFile($old_repro_file);
@@ -297,7 +285,7 @@ sub _reproduce_cmd {
     print STDERR "Reproducing archive: $old_repro_file\n";
     print STDERR "Reproducing command: $cmd\n";
     _validate_prog_name( $archived_prog, $prog, @archived_argv );
-    _validate_archived_info( \%archived_state, $current, $categories, $warnings );
+    _validate_archived_info( \%archived_state, $current, $warnings );
     my $diff_file
         = _summarize_warnings( $warnings, $old_repro_file, $repro_file, $dir,
         $prog, $start );
@@ -305,9 +293,8 @@ sub _reproduce_cmd {
 }
 
 sub _archive_cmd {
-    my ($current,    $repro_file, $prog_dir, $start,
-        $categories, $warnings,   $diff_file
-    ) = @_;
+    my ( $current, $repro_file, $prog_dir, $start, $warnings, $diff_file )
+        = @_;
 
     open my $repro_fh, ">", $repro_file
         or die "Cannot open $repro_file for writing: $!";
@@ -518,7 +505,7 @@ EOF
 }
 
 sub _validate_archived_info {
-    my ( $archived_state, $current, $categories, $warnings ) = @_;
+    my ( $archived_state, $current, $warnings ) = @_;
 
     for my $group (qw(PERL GIT)) {
         _compare_archive_current_array_or_string( $archived_state, $current,
