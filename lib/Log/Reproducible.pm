@@ -343,10 +343,6 @@ sub _git_info {
 
 sub _perl_info {
     my $current = shift;
-    $$current{'PERLPATH'}    = $Config{perlpath};
-    $$current{'PERLVERSION'} = sprintf "v%vd", $^V;
-    $$current{'PERLINC'}     = join "\n", @INC;
-    $$current{'PERLMODULES'} = _loaded_perl_module_versions();
     my $path = $Config{perlpath};
     my $version = sprintf "v%vd", $^V;
     my $modules = _loaded_perl_module_versions();
