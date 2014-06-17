@@ -29,6 +29,7 @@ my $builder = Module::Build->new(
         "File::Temp"     => 0,
         "IPC::Open3"     => 0,
         "POSIX"          => 0,
+        "YAML::Old"      => 0,
     },
     build_requires => {
         'Test::More' => 0,

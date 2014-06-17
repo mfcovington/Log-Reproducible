@@ -8,13 +8,14 @@ use File::Temp ();
 use IPC::Open3;
 use POSIX qw(strftime difftime ceil floor);
 use Config;
+use YAML::Old qw(Dump LoadFile);    # YAML::XS & YAML::Syck aren't working properly
 
 # TODO: Add tests for conflicting module checker
 # TODO: Add verbose (or silent) option
 # TODO: Standalone script that can be used upstream of any command line functions
 # TODO: Auto-build README using POD
 
-our $VERSION = '0.10.0';
+our $VERSION = '0.11.0';
 
 =head1 NAME
 
@@ -115,7 +116,7 @@ BEGIN {
 
 sub import {
     my ( $pkg, $custom_repro_opts ) = @_;
-    reproduce($custom_repro_opts);
+    _reproducibility_is_important($custom_repro_opts);
 }
 
 sub _first_index (&@) {    # From v0.33 of the wonderful List::MoreUtils
@@ -127,7 +128,7 @@ sub _first_index (&@) {    # From v0.33 of the wonderful List::MoreUtils
     return -1;
 }
 
-sub reproduce {
+sub _reproducibility_is_important {
     my $custom_repro_opts = shift;
 
     my $repro_opts     = _parse_custom_repro_opts($custom_repro_opts);
@@ -144,32 +145,17 @@ sub reproduce {
     my ( $repro_file, $start ) = _set_repro_file( $current, $dir, $prog );
     _get_current_state( $current, $prog_dir );
 
-    my $categories = {
-        script => [
-            'NOTE',    'REPRODUCED', 'REPROWARNING', 'STARTED',
-            'WORKDIR', 'SCRIPTDIR'
-        ],
-        system => [
-            'ARCHIVERSION', 'PERLVERSION', 'PERLPATH',  'PERLINC',
-            'PERLMODULES',  'GITCOMMIT',   'GITSTATUS', 'GITDIFFSTAGED',
-            'GITDIFF',      'ENV'
-        ],
-    };
-    my $warnings = [];
-
     my $reproduce_opt = $$repro_opts{reproduce};
-    my $diff_file;
+    my $warnings = [];
     if ( $$current{'CMD'} =~ /\s-?-$reproduce_opt\s+(\S+)/ ) {
         my $old_repro_file = $1;
-        $$current{'REPRODUCED'} = $old_repro_file;
-        ( $$current{'CMD'}, $diff_file ) = _reproduce_cmd(
-            $current,    $prog, $prog_dir,     $old_repro_file,
-            $repro_file, $dir,  $argv_current, $categories,
-            $warnings,   $start
+        $$current{'CMD'} = _reproduce_cmd(
+            $current,        $prog,       $prog_dir,
+            $old_repro_file, $repro_file, $dir,
+            $argv_current,   $warnings,   $start
         );
     }
-    _archive_cmd( $current, $repro_file, $prog_dir, $start, $categories,
-        $warnings, $diff_file );
+    _archive_cmd( $current, $repro_file, $prog_dir, $start, $warnings );
     _exit_code( $repro_file, $start );
 }
 
@@ -219,8 +205,7 @@ sub _set_dir {
 
 sub _parse_command {
     my ( $current, $full_prog_name, $repronote_opt, $argv_current ) = @_;
-    my $note = _get_repro_arg( $repronote_opt, $argv_current );
-    $$current{'NOTE'} = defined $note ? $note : '_' x 73;
+    $$current{'NOTE'} = _get_repro_arg( $repronote_opt, $argv_current );
     for (@$argv_current) {
         $_ = "'$_'" if /\s/;
     }
@@ -274,46 +259,43 @@ sub _is_file_unique {
 }
 
 sub _reproduce_cmd {
-    my ($current,    $prog, $prog_dir,     $old_repro_file,
-        $repro_file, $dir,  $argv_current, $categories,
-        $warnings,   $start
+    my ($current,        $prog,       $prog_dir,
+        $old_repro_file, $repro_file, $dir,
+        $argv_current,   $warnings,   $start
     ) = @_;
 
-    open my $old_repro_fh, "<", $old_repro_file
-        or die "Cannot open $old_repro_file for reading: $!\n";
-    my @archive = <$old_repro_fh>;
-    chomp @archive;
-    close $old_repro_fh;
+    my $raw_archived_state = LoadFile($old_repro_file);
 
-    my $cmd = $archive[0];
+    # Convert array of single-key hashes to single multi-key hash
+    my %archived_state;
+    for (@$raw_archived_state) {
+        my (@keys) = keys $_;
+        die "Something is wrong..." if scalar @keys != 1;
+        $archived_state{$keys[0]} = $$_{$keys[0]};
+    }
+
+    my $cmd = $archived_state{'COMMAND'};
+
     my ( $archived_prog, @archived_argv )
         = $cmd =~ /((?:\'[^']+\')|(?:\"[^"]+\")|(?:\S+))/g;
     @$argv_current = @archived_argv;
     print STDERR "Reproducing archive: $old_repro_file\n";
     print STDERR "Reproducing command: $cmd\n";
     _validate_prog_name( $archived_prog, $prog, @archived_argv );
-    _validate_archived_info( \@archive, $current, $categories, $warnings );
+    _validate_archived_info( \%archived_state, $current, $warnings );
     my $diff_file
         = _summarize_warnings( $warnings, $old_repro_file, $repro_file, $dir,
         $prog, $start );
-    return $cmd, $diff_file;
+    _add_warnings( $current, $warnings, $old_repro_file, $diff_file );
+    return $cmd;
 }
 
 sub _archive_cmd {
-    my ($current,    $repro_file, $prog_dir, $start,
-        $categories, $warnings,   $diff_file
-    ) = @_;
+    my ( $current, $repro_file, $prog_dir, $start, $warnings ) = @_;
 
     open my $repro_fh, ">", $repro_file
         or die "Cannot open $repro_file for writing: $!";
-    print $repro_fh $$current{'CMD'}, "\n";
-
-    _add_archive_comment( $_, $$current{$_}, $repro_fh )
-        for @{ $$categories{'script'} };
-    _add_warnings( $warnings, $diff_file, $repro_fh ) if @$warnings;
-    _add_divider($repro_fh);
-    _add_archive_comment( $_, $$current{$_}, $repro_fh )
-        for @{ $$categories{'system'} };
+    _dump_yaml_to_archive($current, $repro_fh);
     _add_exit_code_preamble($repro_fh);
     close $repro_fh;
     print STDERR "Created new archive: $repro_file\n";
@@ -330,7 +312,7 @@ sub _get_current_state {
 
 sub _archive_version {
     my $current = shift;
-    $$current{'ARCHIVERSION'} = $VERSION;
+    $$current{'ARCHIVE VERSION'} = "@{[__PACKAGE__]} $VERSION";
 }
 
 sub _git_info {
@@ -342,10 +324,21 @@ sub _git_info {
     chomp $gitbranch;
 
     my $gitlog = `cd $prog_dir; git log -n1 --oneline;`;
-    $$current{'GITCOMMIT'}     = "$gitbranch $gitlog";
-    $$current{'GITSTATUS'}     = `cd $prog_dir; git status --short;`;
-    $$current{'GITDIFFSTAGED'} = `cd $prog_dir; git diff --cached;`;
-    $$current{'GITDIFF'}       = `cd $prog_dir; git diff;`;
+    chomp $gitlog;
+
+    my @status = `cd $prog_dir; git status --short;`;
+    chomp @status;
+
+    my $diffstaged = `cd $prog_dir; git diff --cached;`;
+    my $diff       = `cd $prog_dir; git diff;`;
+
+    $$current{'GIT'} = [
+        { 'BRANCH'        => $gitbranch },
+        { 'COMMIT'        => $gitlog },
+        { 'STATUS'        => \@status },
+        { 'DIFF (STAGED)' => $diffstaged },
+        { 'DIFF'          => $diff }
+    ];
 }
 
 sub _perl_info {
@@ -354,6 +347,15 @@ sub _perl_info {
     $$current{'PERLVERSION'} = sprintf "v%vd", $^V;
     $$current{'PERLINC'}     = join "\n", @INC;
     $$current{'PERLMODULES'} = _loaded_perl_module_versions();
+    my $path = $Config{perlpath};
+    my $version = sprintf "v%vd", $^V;
+    my $modules = _loaded_perl_module_versions();
+    $$current{'PERL'} = [
+        { 'VERSION' => $version },
+        { 'PATH'    => $path },
+        { 'INC'     => [@INC] },
+        { 'MODULES' => [@$modules] }
+    ];
 }
 
 sub _loaded_perl_module_versions {
@@ -391,7 +393,7 @@ sub _loaded_perl_module_versions {
         push @module_versions, "$mod $version";
     }
     $NOWARN = 0;
-    return join "\n", @module_versions;
+    return \@module_versions;
 }
 
 sub _dir_info {
@@ -417,32 +419,57 @@ sub _dir_info {
 
 sub _env_info {
     my $current = shift;
-    $$current{'ENV'} = join "\n", map {"$_:$ENV{$_}"} sort keys %ENV;
+    $$current{'ENV'} = \%ENV;
 }
 
-sub _add_archive_comment {
-    my ( $title, $comment, $repro_fh ) = @_;
-    if ( defined $comment ) {
-        my @comment_lines = split /\n/, $comment;
-        print $repro_fh "#$title: $_\n" for @comment_lines;
+sub _dump_yaml_to_archive {
+    my ( $current, $repro_fh ) = @_;
+
+    my @to_yaml = (
+        { 'COMMAND' => $$current{'CMD'} },
+        { 'NOTE'    => $$current{'NOTE'} },
+    );
+    if ( exists $$current{'REPRODUCED'} ) {
+        push @to_yaml, { 'REPRODUCTION' => $$current{'REPRODUCED'} };
     }
+    push @to_yaml, { 'STARTED'         => $$current{'STARTED'} },
+                   { 'WORKING DIR'     => $$current{'WORKDIR'} },
+                   { 'SCRIPT DIR'      => $$current{'SCRIPTDIR'} },
+                   { 'ARCHIVE VERSION' => $$current{'ARCHIVE VERSION'} },
+                   { 'PERL'            => $$current{'PERL'} };
+    if ( exists $$current{'GIT'} ) {
+        push @to_yaml, { 'GIT' => $$current{'GIT'} };
+    }
+    push @to_yaml, { 'ENV' => $$current{'ENV'} };
+
+    print $repro_fh Dump [@to_yaml];
 }
 
 sub _add_warnings {
-    my ( $warnings, $diff_file, $repro_fh ) = @_;
-    print $repro_fh _divider_message();
-    print $repro_fh _divider_message("FOUND DIFFERENCES BETWEEN ARCHIVE AND CURRENT CONDITIONS");
-    print $repro_fh _divider_message();
-    _add_archive_comment( 'DIFFSUMMARY', $diff_file, $repro_fh );
-    _add_archive_comment( 'WARNINGS', $$_{message}, $repro_fh )
-        for @$warnings;
+    my ( $current, $warnings, $old_repro_file, $diff_file ) = @_;
+
+    $diff_file
+        = "Text::Diff needs to be installed to create summary of archive vs. current differences"
+        unless defined $diff_file;
+    my @warning_messages = map { $$_{message} } @$warnings;
+    if ( scalar @warning_messages > 0 ) {
+        $$current{'REPRODUCED'} = [
+            { 'REPRODUCED ARCHIVE' => $old_repro_file },
+            { 'WARNINGS'           => [@warning_messages] },
+            { 'DIFF FILE'          => $diff_file }
+        ];
+    }
+    else {
+        $$current{'REPRODUCED'} = [
+            { 'REPRODUCED ARCHIVE' => $old_repro_file },
+            { 'WARNINGS'           => 'NONE' },
+        ];
+    }
 }
 
-sub _add_divider {
-    my $repro_fh = shift;
-    print $repro_fh _divider_message();
-    print $repro_fh _divider_message("GOTO END OF FILE FOR EXIT CODE INFO");
-    print $repro_fh _divider_message();
+sub _dump_yaml_to_archive_manually {
+    my ( $title, $comment, $repro_fh ) = @_;
+    print $repro_fh "- $title: $comment\n";
 }
 
 sub _add_exit_code_preamble {
@@ -453,7 +480,7 @@ sub _add_exit_code_preamble {
     print $repro_fh _divider_message(
         "TYPICALLY: 0 == SUCCESS AND 255 == FAILURE");
     print $repro_fh _divider_message();
-    print $repro_fh "#EXITCODE: ";
+    print $repro_fh "- EXITCODE: ";    # line left incomplete until exit
 }
 
 sub _divider_message {
@@ -486,38 +513,80 @@ EOF
 }
 
 sub _validate_archived_info {
-    my ( $archive_lines, $current, $categories, $warnings ) = @_;
+    my ( $archived_state, $current, $warnings ) = @_;
 
-    for ( @{ $$categories{'system'} } ) {
-        my ($archived) = _extract_from_archive( $archive_lines, $_ );
-        _compare_archive_current( $archived, $current, $_, $warnings );
+    for my $group (qw(PERL GIT)) {
+        _compare_archive_current_array_or_string( $archived_state, $current,
+            $group, $warnings );
+    }
+    _compare_archive_current_hash( $archived_state, $current, 'ENV',
+        $warnings );
+}
+
+sub _compare_archive_current_hash {
+    my ( $archive, $current, $key, $warnings ) = @_;
+
+    my @arc_array = map {"$_: $$archive{$key}{$_}"} sort keys $$archive{$key};
+    my @cur_array = map {"$_: $$current{$key}{$_}"} sort keys $$current{$key};
+    if ( join( "", @arc_array ) ne join( "", @cur_array ) ) {
+        push @$warnings,
+            {
+            message => "Archived and current $key do NOT match",
+            archive => \@arc_array,
+            current => \@cur_array
+            };
     }
 }
 
-sub _extract_from_archive {
-    my ( $archive_lines, $key ) = @_;
+sub _compare_archive_current_array_or_string {
+    my ( $archive, $current, $group, $warnings ) = @_;
 
-    my @values = grep {/^#$key: /} @$archive_lines;
-    $_ =~ s/^#$key: // for @values;
+    for ( 0 .. $#{ $$archive{$group} } ) {
+        my %archive_subgroup;
+        my %current_subgroup;
+        my ( $arc_key, $too_many_ak ) = keys $$archive{$group}->[$_];
+        my ( $cur_key, $too_many_ck ) = keys $$current{$group}->[$_];
 
-    return join "\n", @values;
-}
+        die "Something is wrong..."
+            if $arc_key ne $cur_key
+            || defined $too_many_ak
+            || defined $too_many_ck;
 
-sub _compare_archive_current {
-    my ( $archived, $current, $key, $warnings ) = @_;
-    my $current_value = $$current{$key};
-    return unless defined $current_value;
-    chomp $current_value;
-    chomp $archived;
+        $archive_subgroup{$arc_key} = $$archive{$group}->[$_]{$arc_key};
+        $current_subgroup{$cur_key} = $$current{$group}->[$_]{$cur_key};
 
-    if ( $archived ne $current_value ) {
-        my $warning_message = "Archived and current $key do NOT match";
-        push @$warnings,
+        if (   !ref( $archive_subgroup{$arc_key} )
+            && !ref( $current_subgroup{$cur_key} ) )
+        {
+            if ( $archive_subgroup{$arc_key} ne $current_subgroup{$cur_key} )
             {
-                message  => $warning_message,
-                archived => $archived,
-                current  => $current_value
-            };
+                push @$warnings,
+                    {
+                    message =>
+                        "Archived and current $group $cur_key do NOT match",
+                    archive => \$archive_subgroup{$arc_key},
+                    current => \$current_subgroup{$cur_key}
+                    };
+            }
+        }
+        elsif (ref( $archive_subgroup{$arc_key} ) eq "ARRAY"
+            && ref( $current_subgroup{$cur_key} ) eq "ARRAY" )
+        {
+            if (join( "", @{ $archive_subgroup{$arc_key} } ) ne
+                join( "", @{ $current_subgroup{$cur_key} } ) )
+            {
+                push @$warnings,
+                    {
+                    message =>
+                        "Archived and current $group $cur_key do NOT match",
+                    archive => $archive_subgroup{$arc_key},
+                    current => $current_subgroup{$cur_key}
+                    };
+            }
+        }
+        else {
+            die "Something is wrong...";
+        }
     }
 }
 
@@ -570,7 +639,7 @@ Note: This file is often best viewed with word wrapping disabled
 
 HEAD
     for my $alert (@$warnings) {
-        my $diff = diff( \$$alert{archived}, \$$alert{current},
+        my $diff = diff( $$alert{archive}, $$alert{current},
             { STYLE => "Table" } );
         print $diff_fh $$alert{message}, "\n";
         print $diff_fh $diff, "\n";
@@ -605,8 +674,9 @@ sub _exit_code {
         open my $repro_fh, ">>", $repro_file
             or die "Cannot open $repro_file for appending: $!";
         print $repro_fh "$?\n";    # This completes EXITCODE line
-        _add_archive_comment( "FINISHED", $$finish{'when'}, $repro_fh );
-        _add_archive_comment( "ELAPSED",  $elapsed,         $repro_fh );
+        _dump_yaml_to_archive_manually( "FINISHED", $$finish{'when'},
+            $repro_fh );
+        _dump_yaml_to_archive_manually( "ELAPSED", $elapsed, $repro_fh );
         close $repro_fh;
     }
 }

@@ -1,5 +1,9 @@
 Revision history for Perl module Log::Reproducible
 
+0.11.0 2014-06-16
+
+  - Create archive files in YAML format
+
 0.10.0 2014-05-12
 
   - Archive versions of loaded Perl modules
