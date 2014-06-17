@@ -1,4 +1,4 @@
-# Log::Reproducible (0.11.0)
+# Log::Reproducible (0.11.1)
 
 Increase your reproducibility with the Perl module Log::Reproducible. 
 
@@ -65,7 +65,7 @@ If it was run as `perl bin/sample.pl -a 1 -b 2 -c 3 OTHER ARGUMENTS`, the conten
     - STARTED: at HH:MM:SS on weekday month day, year
     - WORKING DIR: /path/to/working/dir
     - SCRIPT DIR: bin (/path/to/working/dir/bin)
-    - ARCHIVE VERSION: Log::Reproducible 0.11.0
+    - ARCHIVE VERSION: Log::Reproducible 0.11.1
     - PERL:
         - VERSION: v5.20.0
         - PATH: /path/to/bin/perl
@@ -77,6 +77,7 @@ If it was run as `perl bin/sample.pl -a 1 -b 2 -c 3 OTHER ARGUMENTS`, the conten
             - Another::Module 43.08
     - ENV:
         PATH: /usr/local/bin:/paths/to/more/bins
+        ...
         _system_name: OSX
         _system_version: 10.9
     ################################################################################
