@@ -15,7 +15,7 @@ use YAML::Old qw(Dump LoadFile);    # YAML::XS & YAML::Syck aren't working prope
 # TODO: Standalone script that can be used upstream of any command line functions
 # TODO: Auto-build README using POD
 
-our $VERSION = '0.11.0';
+our $VERSION = '0.11.1';
 
 =head1 NAME
 
@@ -238,7 +238,7 @@ sub _now {
     my %now;
     my @localtime = localtime;
     $now{'timestamp'} = strftime "%Y%m%d.%H%M%S",         @localtime;
-    $now{'when'}      = strftime "at %X on %a %b %d, %Y", @localtime;
+    $now{'when'}      = strftime "at %H:%M:%S on %a %b %d, %Y", @localtime;
     $now{'seconds'}   = time();
     return \%now;
 }

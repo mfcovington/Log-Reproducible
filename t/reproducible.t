@@ -35,8 +35,6 @@ my $cmd         = "perl $Bin/$script --reprodir $archive_dir";
 @got = `$cmd -a 1 -b 'two words' -c string some other stuff 2> /dev/null`;
 is_deeply( \@got, $expected, 'Run and archive Perl script' );
 
-sleep 1;
-
 my $archive = get_recent_archive($archive_dir);
 @got = `$cmd --reproduce $archive_dir/$archive 2> /dev/null`;
 is_deeply( \@got, $expected, 'Run an archived Perl script' );
@@ -181,7 +179,8 @@ sub get_recent_archive {
     opendir (my $dh, $archive_dir) or die "Cannot opendir $archive_dir: $!";
     my @archives = grep { /^rlog-$script/ && -f "$archive_dir/$_" } readdir($dh);
     closedir $dh;
-    return pop @archives;
+    my @sorted_archives = sort @archives;
+    return pop @sorted_archives;
 }
 
 sub test_set_dir {
