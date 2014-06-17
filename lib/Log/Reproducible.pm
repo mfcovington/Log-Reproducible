@@ -296,7 +296,6 @@ sub _archive_cmd {
     open my $repro_fh, ">", $repro_file
         or die "Cannot open $repro_file for writing: $!";
     _dump_yaml_to_archive($current, $repro_fh);
-    _add_exit_code_preamble($repro_fh);
     close $repro_fh;
     print STDERR "Created new archive: $repro_file\n";
 }
@@ -662,6 +661,11 @@ sub _do_or_die {
 
 sub _exit_code {
     our ( $repro_file, $start ) = @_;
+
+    open my $repro_fh, ">>", $repro_file
+        or die "Cannot open $repro_file for appending: $!";
+    _add_exit_code_preamble($repro_fh);
+    close $repro_fh;
 
     END {
         return unless defined $repro_file;
