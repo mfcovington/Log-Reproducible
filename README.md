@@ -63,9 +63,9 @@ If it was run as `perl bin/sample.pl -a 1 -b 2 -c 3 OTHER ARGUMENTS`, the conten
     - COMMAND: sample.pl -a 1 -b 2 -c 3 OTHER ARGUMENTS
     - NOTE: ~
     - STARTED: at HH:MM:SS on weekday month day, year
-    - WORKDIR: /path/to/working/dir
-    - SCRIPTDIR: bin (/path/to/working/dir/bin)
-    - ARCHIVE VERSION: Log::Reproducible 0.10.0
+    - WORKING DIR: /path/to/working/dir
+    - SCRIPT DIR: bin (/path/to/working/dir/bin)
+    - ARCHIVE VERSION: Log::Reproducible 0.11.0
     - PERL:
         - VERSION: v5.20.0
         - PATH: /path/to/bin/perl
@@ -191,7 +191,7 @@ An example of the Git info from an archive:
             - ' M unstaged-modified-file'
             - 'A  newly-added-file'
             - '?? untracked-file'
-        - DIFFSTAGED: |
+        - DIFF (STAGED): |
             diff --git a/staged-modified-file b/staged-modified-file
             index ce2f709..a04c0f6 100644
             --- a/staged-modified-file

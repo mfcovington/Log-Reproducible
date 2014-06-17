@@ -333,11 +333,11 @@ sub _git_info {
     my $diff       = `cd $prog_dir; git diff;`;
 
     $$current{'GIT'} = [
-        { 'BRANCH'     => $gitbranch },
-        { 'COMMIT'     => $gitlog },
-        { 'STATUS'     => \@status },
-        { 'DIFFSTAGED' => $diffstaged },
-        { 'DIFF'       => $diff }
+        { 'BRANCH'        => $gitbranch },
+        { 'COMMIT'        => $gitlog },
+        { 'STATUS'        => \@status },
+        { 'DIFF (STAGED)' => $diffstaged },
+        { 'DIFF'          => $diff }
     ];
 }
 
@@ -433,8 +433,8 @@ sub _dump_yaml_to_archive {
         push @to_yaml, { 'REPRODUCTION' => $$current{'REPRODUCED'} };
     }
     push @to_yaml, { 'STARTED'         => $$current{'STARTED'} },
-                   { 'WORKDIR'         => $$current{'WORKDIR'} },
-                   { 'SCRIPTDIR'       => $$current{'SCRIPTDIR'} },
+                   { 'WORKING DIR'     => $$current{'WORKDIR'} },
+                   { 'SCRIPT DIR'      => $$current{'SCRIPTDIR'} },
                    { 'ARCHIVE VERSION' => $$current{'ARCHIVE VERSION'} },
                    { 'PERL'            => $$current{'PERL'} };
     if ( exists $$current{'GIT'} ) {
