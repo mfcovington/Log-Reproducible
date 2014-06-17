@@ -238,7 +238,7 @@ sub _now {
     my %now;
     my @localtime = localtime;
     $now{'timestamp'} = strftime "%Y%m%d.%H%M%S",         @localtime;
-    $now{'when'}      = strftime "at %X on %a %b %d, %Y", @localtime;
+    $now{'when'}      = strftime "at %H:%M:%S on %a %b %d, %Y", @localtime;
     $now{'seconds'}   = time();
     return \%now;
 }
