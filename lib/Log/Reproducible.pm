@@ -149,13 +149,11 @@ sub _reproducibility_is_important {
     my $warnings = [];
     if ( $$current{'CMD'} =~ /\s-?-$reproduce_opt\s+(\S+)/ ) {
         my $old_repro_file = $1;
-        $$current{'CMD'} = _reproduce_cmd(
-            $current,        $prog,       $prog_dir,
-            $old_repro_file, $repro_file, $dir,
-            $argv_current,   $warnings,   $start
-        );
+        $$current{'CMD'}
+            = _reproduce_cmd( $current, $prog, $old_repro_file, $repro_file,
+            $dir, $argv_current, $warnings, $start );
     }
-    _archive_cmd( $current, $repro_file, $prog_dir, $start, $warnings );
+    _archive_cmd( $current, $repro_file );
     _exit_code( $repro_file, $start );
 }
 
@@ -259,10 +257,9 @@ sub _is_file_unique {
 }
 
 sub _reproduce_cmd {
-    my ($current,        $prog,       $prog_dir,
-        $old_repro_file, $repro_file, $dir,
-        $argv_current,   $warnings,   $start
-    ) = @_;
+    my ( $current, $prog, $old_repro_file, $repro_file, $dir, $argv_current,
+        $warnings, $start )
+        = @_;
 
     my $raw_archived_state = LoadFile($old_repro_file);
 
@@ -291,7 +288,7 @@ sub _reproduce_cmd {
 }
 
 sub _archive_cmd {
-    my ( $current, $repro_file, $prog_dir, $start, $warnings ) = @_;
+    my ( $current, $repro_file ) = @_;
 
     open my $repro_fh, ">", $repro_file
         or die "Cannot open $repro_file for writing: $!";
