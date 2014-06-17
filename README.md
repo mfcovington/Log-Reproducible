@@ -29,7 +29,7 @@ use Log::Reproducible;
 
 That's all!
 
-Now, every time you run your script, the command line options and other arguments passed to it will be archived in a simple log file whose name reflects the script and the date/time it began running.
+Now, every time you run your script, the command line options and other arguments passed to it will be archived in a simple YAML-formatted log file whose name reflects the script and the date/time it began running.
 
 #### With the `perlr` wrapper
 
@@ -59,32 +59,33 @@ For example, running the script `sample.pl` would result in an archive file name
 
 If it was run as `perl bin/sample.pl -a 1 -b 2 -c 3 OTHER ARGUMENTS`, the contents of the archive file would look something like:
 
-    sample.pl -a 1 -b 2 -c 3 OTHER ARGUMENTS
-    #NOTE: _________________________________________________________________________
-    #WHEN: at HH:MM:SS on weekday month day, year
-    #WORKDIR: /path/to/working/dir
-    #SCRIPTDIR: bin (/path/to/working/dir/bin)
-    ################################################################################
-    ##################### GOTO END OF FILE FOR EXIT CODE INFO. #####################
-    ################################################################################
-    #ARCHIVERSION: 0.10.0
-    #PERLVERSION: v5.18.2
-    #PERLPATH: /path/to/bin/perl
-    #PERLINC: /path/to/perl/lib
-    #PERLINC: /path/to/another/perl/lib
-    #PERLMODULES: Some::Module 0.12
-    #PERLMODULES: Another::Module 43.08
-    #ENV: PATH:/usr/local/bin:/paths/to/more/bins
-    ...
-    #ENV: _system_name:OSX
-    #ENV: _system_version:10.9
+    ---
+    - COMMAND: sample.pl -a 1 -b 2 -c 3 OTHER ARGUMENTS
+    - NOTE: ~
+    - STARTED: at HH:MM:SS on weekday month day, year
+    - WORKDIR: /path/to/working/dir
+    - SCRIPTDIR: bin (/path/to/working/dir/bin)
+    - ARCHIVE VERSION: Log::Reproducible 0.10.0
+    - PERL:
+        - VERSION: v5.20.0
+        - PATH: /path/to/bin/perl
+        - INC:
+            - /path/to/perl/lib
+            - /path/to/another/perl/lib
+        - MODULES:
+            - Some::Module 0.12
+            - Another::Module 43.08
+    - ENV:
+        PATH: /usr/local/bin:/paths/to/more/bins
+        _system_name: OSX
+        _system_version: 10.9
     ################################################################################
     ###### IF EXIT CODE IS MISSING, SCRIPT WAS CANCELLED OR IS STILL RUNNING! ######
     ################## TYPICALLY: 0 == SUCCESS AND 255 == FAILURE ##################
     ################################################################################
-    #EXITCODE: 0
-    #FINISHED: at HH:MM:SS on weekday month day, year
-    #ELAPSED: HH:MM:SS
+    - EXITCODE: 0
+    - FINISHED: at HH:MM:SS on weekday month day, year
+    - ELAPSED: HH:MM:SS
 
 ### Reproducing an Archived Analysis
 
@@ -182,29 +183,34 @@ If git is installed on your system and your script resides within a Git reposito
 
 An example of the Git info from an archive:
 
-    #GITCOMMIT: develop f483a06 Awesome commit message
-    #GITSTATUS: M  staged-modified-file
-    #GITSTATUS:  M unstaged-modified-file
-    #GITSTATUS: A  newly-added-file
-    #GITSTATUS: ?? untracked-file
-    #GITDIFFSTAGED: diff --git a/staged-modified-file b/staged-modified-file
-    #GITDIFFSTAGED: index ce2f709..a04c0f6 100644
-    #GITDIFFSTAGED: --- a/staged-modified-file
-    #GITDIFFSTAGED: +++ b/staged-modified-file
-    #GITDIFFSTAGED: @@ -1,3 +1,3 @@
-    #GITDIFFSTAGED:  An unmodified line
-    #GITDIFFSTAGED: -A deleted line
-    #GITDIFFSTAGED: +An added line
-    #GITDIFFSTAGED:  Another unmodified line
-    #GITDIFF: diff --git a/unstaged-modified-file b/unstaged-modified-file
-    #GITDIFF: index ce2f709..a04c0f6 100644
-    #GITDIFF: --- a/unstaged-modified-file
-    #GITDIFF: +++ b/unstaged-modified-file
-    #GITDIFF: @@ -1,3 +1,3 @@
-    #GITDIFF:  An unmodified line
-    #GITDIFF: -A deleted line
-    #GITDIFF: +An added line
-    #GITDIFF:  Another unmodified line
+    - GIT:
+        - BRANCH: develop
+        - COMMIT: f483a06 Awesome commit message
+        - STATUS:
+            - 'M  staged-modified-file'
+            - ' M unstaged-modified-file'
+            - 'A  newly-added-file'
+            - '?? untracked-file'
+        - DIFFSTAGED: |
+            diff --git a/staged-modified-file b/staged-modified-file
+            index ce2f709..a04c0f6 100644
+            --- a/staged-modified-file
+            +++ b/staged-modified-file
+            @@ -1,3 +1,3 @@
+             An unmodified line
+            -A deleted line
+            +An added line
+             Another unmodified line
+        - DIFF: |
+            diff --git a/unstaged-modified-file b/unstaged-modified-file
+            index ce2f709..a04c0f6 100644
+            --- a/unstaged-modified-file
+            +++ b/unstaged-modified-file
+            @@ -1,3 +1,3 @@
+             An unmodified line
+            -A deleted line
+            +An added line
+             Another unmodified line
 
 If you are familiar with Git, you will be able to figure out that the Git repository is on the `develop` branch and the most recent commit (`f483a06`) has the message: "Awesome commit message".
 
