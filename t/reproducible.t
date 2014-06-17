@@ -181,7 +181,8 @@ sub get_recent_archive {
     opendir (my $dh, $archive_dir) or die "Cannot opendir $archive_dir: $!";
     my @archives = grep { /^rlog-$script/ && -f "$archive_dir/$_" } readdir($dh);
     closedir $dh;
-    return pop @archives;
+    my @sorted_archives = sort @archives;
+    return pop @sorted_archives;
 }
 
 sub test_set_dir {
