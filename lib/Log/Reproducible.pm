@@ -267,7 +267,7 @@ sub _reproduce_cmd {
     # Convert array of single-key hashes to single multi-key hash
     my %archived_state;
     for (@$raw_archived_state) {
-        my (@keys) = keys $_;
+        my (@keys) = keys %$_;
         die "Something is wrong..." if scalar @keys != 1;
         $archived_state{ $keys[0] } = $$_{ $keys[0] };
     }
@@ -517,8 +517,10 @@ sub _validate_archived_info {
 sub _compare_archive_current_hash {
     my ( $archive, $current, $key, $warnings ) = @_;
 
-    my @arc_array = map {"$_: $$archive{$key}{$_}"} sort keys $$archive{$key};
-    my @cur_array = map {"$_: $$current{$key}{$_}"} sort keys $$current{$key};
+    my @arc_array
+        = map {"$_: $$archive{$key}{$_}"} sort keys %{ $$archive{$key} };
+    my @cur_array
+        = map {"$_: $$current{$key}{$_}"} sort keys %{ $$current{$key} };
     if ( join( "", @arc_array ) ne join( "", @cur_array ) ) {
         push @$warnings,
             {
@@ -535,8 +537,8 @@ sub _compare_archive_current_array_or_string {
     for ( 0 .. $#{ $$archive{$group} } ) {
         my %archive_subgroup;
         my %current_subgroup;
-        my ( $arc_key, $too_many_ak ) = keys $$archive{$group}->[$_];
-        my ( $cur_key, $too_many_ck ) = keys $$current{$group}->[$_];
+        my ( $arc_key, $too_many_ak ) = keys %{ $$archive{$group}->[$_] };
+        my ( $cur_key, $too_many_ck ) = keys %{ $$current{$group}->[$_] };
 
         die "Something is wrong..."
             if $arc_key ne $cur_key
