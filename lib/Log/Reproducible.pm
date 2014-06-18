@@ -15,7 +15,7 @@ use YAML::Old qw(Dump LoadFile);    # YAML::XS & YAML::Syck aren't working prope
 # TODO: Standalone script that can be used upstream of any command line functions
 # TODO: Auto-build README using POD
 
-our $VERSION = '0.11.1';
+our $VERSION = '0.11.2';
 
 =head1 NAME
 
@@ -147,20 +147,18 @@ sub _reproducibility_is_important {
 
     my $reproduce_opt = $$repro_opts{reproduce};
     my $warnings = [];
-    if ( $$current{'CMD'} =~ /\s-?-$reproduce_opt\s+(\S+)/ ) {
+    if ( $$current{'COMMAND'} =~ /\s-?-$reproduce_opt\s+(\S+)/ ) {
         my $old_repro_file = $1;
-        $$current{'CMD'} = _reproduce_cmd(
-            $current,        $prog,       $prog_dir,
-            $old_repro_file, $repro_file, $dir,
-            $argv_current,   $warnings,   $start
-        );
+        $$current{'COMMAND'}
+            = _reproduce_cmd( $current, $prog, $old_repro_file, $repro_file,
+            $dir, $argv_current, $warnings, $start );
     }
-    _archive_cmd( $current, $repro_file, $prog_dir, $start, $warnings );
+    _archive_cmd( $current, $repro_file );
     _exit_code( $repro_file, $start );
 }
 
 sub _parse_custom_repro_opts {
-    my $custom_repro_opts   = shift;
+    my $custom_repro_opts = shift;
 
     my %default_opts = (
         dir       => undef,
@@ -169,7 +167,7 @@ sub _parse_custom_repro_opts {
         repronote => 'repronote'
     );
 
-    if ( ! defined $custom_repro_opts) {
+    if ( !defined $custom_repro_opts ) {
         return \%default_opts;
     }
     elsif ( ref($custom_repro_opts) eq 'HASH' ) {
@@ -210,7 +208,7 @@ sub _parse_command {
         $_ = "'$_'" if /\s/;
     }
     my ( $prog, $prog_dir ) = fileparse $full_prog_name;
-    $$current{'CMD'} = join " ", $prog, @$argv_current;
+    $$current{'COMMAND'} = join " ", $prog, @$argv_current;
     return $prog, $prog_dir;
 }
 
@@ -237,7 +235,7 @@ sub _set_repro_file {
 sub _now {
     my %now;
     my @localtime = localtime;
-    $now{'timestamp'} = strftime "%Y%m%d.%H%M%S",         @localtime;
+    $now{'timestamp'} = strftime "%Y%m%d.%H%M%S",               @localtime;
     $now{'when'}      = strftime "at %H:%M:%S on %a %b %d, %Y", @localtime;
     $now{'seconds'}   = time();
     return \%now;
@@ -259,10 +257,9 @@ sub _is_file_unique {
 }
 
 sub _reproduce_cmd {
-    my ($current,        $prog,       $prog_dir,
-        $old_repro_file, $repro_file, $dir,
-        $argv_current,   $warnings,   $start
-    ) = @_;
+    my ( $current, $prog, $old_repro_file, $repro_file, $dir, $argv_current,
+        $warnings, $start )
+        = @_;
 
     my $raw_archived_state = LoadFile($old_repro_file);
 
@@ -271,7 +268,7 @@ sub _reproduce_cmd {
     for (@$raw_archived_state) {
         my (@keys) = keys $_;
         die "Something is wrong..." if scalar @keys != 1;
-        $archived_state{$keys[0]} = $$_{$keys[0]};
+        $archived_state{ $keys[0] } = $$_{ $keys[0] };
     }
 
     my $cmd = $archived_state{'COMMAND'};
@@ -291,12 +288,11 @@ sub _reproduce_cmd {
 }
 
 sub _archive_cmd {
-    my ( $current, $repro_file, $prog_dir, $start, $warnings ) = @_;
+    my ( $current, $repro_file ) = @_;
 
     open my $repro_fh, ">", $repro_file
         or die "Cannot open $repro_file for writing: $!";
-    _dump_yaml_to_archive($current, $repro_fh);
-    _add_exit_code_preamble($repro_fh);
+    _dump_yaml_to_archive( $current, $repro_fh );
     close $repro_fh;
     print STDERR "Created new archive: $repro_file\n";
 }
@@ -343,11 +339,7 @@ sub _git_info {
 
 sub _perl_info {
     my $current = shift;
-    $$current{'PERLPATH'}    = $Config{perlpath};
-    $$current{'PERLVERSION'} = sprintf "v%vd", $^V;
-    $$current{'PERLINC'}     = join "\n", @INC;
-    $$current{'PERLMODULES'} = _loaded_perl_module_versions();
-    my $path = $Config{perlpath};
+    my $path    = $Config{perlpath};
     my $version = sprintf "v%vd", $^V;
     my $modules = _loaded_perl_module_versions();
     $$current{'PERL'} = [
@@ -413,8 +405,8 @@ sub _dir_info {
     }
     my $script_dir = "$prog_dir ($absolute_prog_dir)";
 
-    $$current{'WORKDIR'}   = $cwd;
-    $$current{'SCRIPTDIR'} = $script_dir;
+    $$current{'WORKING DIR'} = $cwd;
+    $$current{'SCRIPT DIR'}  = $script_dir;
 }
 
 sub _env_info {
@@ -426,15 +418,15 @@ sub _dump_yaml_to_archive {
     my ( $current, $repro_fh ) = @_;
 
     my @to_yaml = (
-        { 'COMMAND' => $$current{'CMD'} },
+        { 'COMMAND' => $$current{'COMMAND'} },
         { 'NOTE'    => $$current{'NOTE'} },
     );
-    if ( exists $$current{'REPRODUCED'} ) {
-        push @to_yaml, { 'REPRODUCTION' => $$current{'REPRODUCED'} };
+    if ( exists $$current{'REPRODUCTION'} ) {
+        push @to_yaml, { 'REPRODUCTION' => $$current{'REPRODUCTION'} };
     }
     push @to_yaml, { 'STARTED'         => $$current{'STARTED'} },
-                   { 'WORKING DIR'     => $$current{'WORKDIR'} },
-                   { 'SCRIPT DIR'      => $$current{'SCRIPTDIR'} },
+                   { 'WORKING DIR'     => $$current{'WORKING DIR'} },
+                   { 'SCRIPT DIR'      => $$current{'SCRIPT DIR'} },
                    { 'ARCHIVE VERSION' => $$current{'ARCHIVE VERSION'} },
                    { 'PERL'            => $$current{'PERL'} };
     if ( exists $$current{'GIT'} ) {
@@ -453,14 +445,14 @@ sub _add_warnings {
         unless defined $diff_file;
     my @warning_messages = map { $$_{message} } @$warnings;
     if ( scalar @warning_messages > 0 ) {
-        $$current{'REPRODUCED'} = [
+        $$current{'REPRODUCTION'} = [
             { 'REPRODUCED ARCHIVE' => $old_repro_file },
             { 'WARNINGS'           => [@warning_messages] },
             { 'DIFF FILE'          => $diff_file }
         ];
     }
     else {
-        $$current{'REPRODUCED'} = [
+        $$current{'REPRODUCTION'} = [
             { 'REPRODUCED ARCHIVE' => $old_repro_file },
             { 'WARNINGS'           => 'NONE' },
         ];
@@ -624,6 +616,7 @@ sub _repro_diff {
 
     my ($old_timestamp) = $old_repro_file =~ /-(\d{8}\.\d{6}(?:\.\d{3})?)$/;
     my $new_timestamp = $$start{'timestamp'};
+
     my $diff_file = "$dir/rdiff-$prog-$old_timestamp.vs.$new_timestamp";
     _is_file_unique( \$diff_file );
     open my $diff_fh, ">", $diff_file;
@@ -666,6 +659,11 @@ sub _do_or_die {
 
 sub _exit_code {
     our ( $repro_file, $start ) = @_;
+
+    open my $repro_fh, ">>", $repro_file
+        or die "Cannot open $repro_file for appending: $!";
+    _add_exit_code_preamble($repro_fh);
+    close $repro_fh;
 
     END {
         return unless defined $repro_file;
