@@ -4,6 +4,7 @@ use warnings;
 use Cwd;
 use File::Path 'make_path';
 use File::Basename;
+use File::Spec;
 use File::Temp ();
 use IPC::Open3;
 use POSIX qw(strftime difftime ceil floor);
@@ -313,7 +314,9 @@ sub _archive_version {
 
 sub _git_info {
     my ( $current, $prog_dir ) = @_;
-    return if `which git` eq '';
+
+    my $devnull = File::Spec->devnull();
+    return if `git --version 2> $devnull` eq '';
 
     my $original_dir = getcwd;
     chdir $prog_dir;
