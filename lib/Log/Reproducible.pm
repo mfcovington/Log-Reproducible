@@ -315,18 +315,21 @@ sub _git_info {
     my ( $current, $prog_dir ) = @_;
     return if `which git` eq '';
 
-    my $gitbranch = `cd $prog_dir; git rev-parse --abbrev-ref HEAD 2>&1;`;
+    my $original_dir = getcwd;
+    chdir $prog_dir;
+
+    my $gitbranch = `git rev-parse --abbrev-ref HEAD 2>&1;`;
     return if $gitbranch =~ /fatal: Not a git repository/;
     chomp $gitbranch;
 
-    my $gitlog = `cd $prog_dir; git log -n1 --oneline;`;
+    my $gitlog = `git log -n1 --oneline;`;
     chomp $gitlog;
 
-    my @status = `cd $prog_dir; git status --short;`;
+    my @status = `git status --short;`;
     chomp @status;
 
-    my $diffstaged = `cd $prog_dir; git diff --cached;`;
-    my $diff       = `cd $prog_dir; git diff;`;
+    my $diffstaged = `git diff --cached;`;
+    my $diff       = `git diff;`;
 
     $$current{'GIT'} = [
         { 'BRANCH'        => $gitbranch },
@@ -335,6 +338,7 @@ sub _git_info {
         { 'DIFF (STAGED)' => $diffstaged },
         { 'DIFF'          => $diff }
     ];
+    chdir $original_dir;
 }
 
 sub _perl_info {
