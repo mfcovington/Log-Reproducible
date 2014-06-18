@@ -391,7 +391,7 @@ sub _loaded_perl_module_versions {
 sub _dir_info {
     my ( $current, $prog_dir ) = @_;
 
-    my $cwd = cwd;
+    my $cwd = getcwd;
     my $absolute_prog_dir;
 
     if ( $prog_dir eq "./" ) {
