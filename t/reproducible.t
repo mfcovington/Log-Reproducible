@@ -148,7 +148,7 @@ subtest '_parse_command tests' => sub {
     is( $prog,             "script.pl", "Script name" );
     is( $prog_dir,         "/path/to/", "Script directory" );
     is( $$current{'NOTE'}, "test note", "Repro note" );
-    is( $$current{'CMD'}, "$prog -a 1 -b 'a test' some arguments",
+    is( $$current{'COMMAND'}, "$prog -a 1 -b 'a test' some arguments",
         "Full command" );
 };
 

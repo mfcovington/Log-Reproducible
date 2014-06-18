@@ -147,9 +147,9 @@ sub _reproducibility_is_important {
 
     my $reproduce_opt = $$repro_opts{reproduce};
     my $warnings = [];
-    if ( $$current{'CMD'} =~ /\s-?-$reproduce_opt\s+(\S+)/ ) {
+    if ( $$current{'COMMAND'} =~ /\s-?-$reproduce_opt\s+(\S+)/ ) {
         my $old_repro_file = $1;
-        $$current{'CMD'}
+        $$current{'COMMAND'}
             = _reproduce_cmd( $current, $prog, $old_repro_file, $repro_file,
             $dir, $argv_current, $warnings, $start );
     }
@@ -208,7 +208,7 @@ sub _parse_command {
         $_ = "'$_'" if /\s/;
     }
     my ( $prog, $prog_dir ) = fileparse $full_prog_name;
-    $$current{'CMD'} = join " ", $prog, @$argv_current;
+    $$current{'COMMAND'} = join " ", $prog, @$argv_current;
     return $prog, $prog_dir;
 }
 
@@ -405,8 +405,8 @@ sub _dir_info {
     }
     my $script_dir = "$prog_dir ($absolute_prog_dir)";
 
-    $$current{'WORKDIR'}   = $cwd;
-    $$current{'SCRIPTDIR'} = $script_dir;
+    $$current{'WORKING DIR'}   = $cwd;
+    $$current{'SCRIPT DIR'} = $script_dir;
 }
 
 sub _env_info {
@@ -418,15 +418,15 @@ sub _dump_yaml_to_archive {
     my ( $current, $repro_fh ) = @_;
 
     my @to_yaml = (
-        { 'COMMAND' => $$current{'CMD'} },
+        { 'COMMAND' => $$current{'COMMAND'} },
         { 'NOTE'    => $$current{'NOTE'} },
     );
-    if ( exists $$current{'REPRODUCED'} ) {
-        push @to_yaml, { 'REPRODUCTION' => $$current{'REPRODUCED'} };
+    if ( exists $$current{'REPRODUCTION'} ) {
+        push @to_yaml, { 'REPRODUCTION' => $$current{'REPRODUCTION'} };
     }
     push @to_yaml, { 'STARTED'         => $$current{'STARTED'} },
-                   { 'WORKING DIR'     => $$current{'WORKDIR'} },
-                   { 'SCRIPT DIR'      => $$current{'SCRIPTDIR'} },
+                   { 'WORKING DIR'     => $$current{'WORKING DIR'} },
+                   { 'SCRIPT DIR'      => $$current{'SCRIPT DIR'} },
                    { 'ARCHIVE VERSION' => $$current{'ARCHIVE VERSION'} },
                    { 'PERL'            => $$current{'PERL'} };
     if ( exists $$current{'GIT'} ) {
@@ -445,14 +445,14 @@ sub _add_warnings {
         unless defined $diff_file;
     my @warning_messages = map { $$_{message} } @$warnings;
     if ( scalar @warning_messages > 0 ) {
-        $$current{'REPRODUCED'} = [
+        $$current{'REPRODUCTION'} = [
             { 'REPRODUCED ARCHIVE' => $old_repro_file },
             { 'WARNINGS'           => [@warning_messages] },
             { 'DIFF FILE'          => $diff_file }
         ];
     }
     else {
-        $$current{'REPRODUCED'} = [
+        $$current{'REPRODUCTION'} = [
             { 'REPRODUCED ARCHIVE' => $old_repro_file },
             { 'WARNINGS'           => 'NONE' },
         ];
