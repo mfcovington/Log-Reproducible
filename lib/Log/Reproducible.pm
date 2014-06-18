@@ -158,7 +158,7 @@ sub _reproducibility_is_important {
 }
 
 sub _parse_custom_repro_opts {
-    my $custom_repro_opts   = shift;
+    my $custom_repro_opts = shift;
 
     my %default_opts = (
         dir       => undef,
@@ -167,7 +167,7 @@ sub _parse_custom_repro_opts {
         repronote => 'repronote'
     );
 
-    if ( ! defined $custom_repro_opts) {
+    if ( !defined $custom_repro_opts ) {
         return \%default_opts;
     }
     elsif ( ref($custom_repro_opts) eq 'HASH' ) {
@@ -235,7 +235,7 @@ sub _set_repro_file {
 sub _now {
     my %now;
     my @localtime = localtime;
-    $now{'timestamp'} = strftime "%Y%m%d.%H%M%S",         @localtime;
+    $now{'timestamp'} = strftime "%Y%m%d.%H%M%S",               @localtime;
     $now{'when'}      = strftime "at %H:%M:%S on %a %b %d, %Y", @localtime;
     $now{'seconds'}   = time();
     return \%now;
@@ -268,7 +268,7 @@ sub _reproduce_cmd {
     for (@$raw_archived_state) {
         my (@keys) = keys $_;
         die "Something is wrong..." if scalar @keys != 1;
-        $archived_state{$keys[0]} = $$_{$keys[0]};
+        $archived_state{ $keys[0] } = $$_{ $keys[0] };
     }
 
     my $cmd = $archived_state{'COMMAND'};
@@ -292,7 +292,7 @@ sub _archive_cmd {
 
     open my $repro_fh, ">", $repro_file
         or die "Cannot open $repro_file for writing: $!";
-    _dump_yaml_to_archive($current, $repro_fh);
+    _dump_yaml_to_archive( $current, $repro_fh );
     close $repro_fh;
     print STDERR "Created new archive: $repro_file\n";
 }
@@ -339,7 +339,7 @@ sub _git_info {
 
 sub _perl_info {
     my $current = shift;
-    my $path = $Config{perlpath};
+    my $path    = $Config{perlpath};
     my $version = sprintf "v%vd", $^V;
     my $modules = _loaded_perl_module_versions();
     $$current{'PERL'} = [
@@ -405,8 +405,8 @@ sub _dir_info {
     }
     my $script_dir = "$prog_dir ($absolute_prog_dir)";
 
-    $$current{'WORKING DIR'}   = $cwd;
-    $$current{'SCRIPT DIR'} = $script_dir;
+    $$current{'WORKING DIR'} = $cwd;
+    $$current{'SCRIPT DIR'}  = $script_dir;
 }
 
 sub _env_info {
@@ -616,6 +616,7 @@ sub _repro_diff {
 
     my ($old_timestamp) = $old_repro_file =~ /-(\d{8}\.\d{6}(?:\.\d{3})?)$/;
     my $new_timestamp = $$start{'timestamp'};
+
     my $diff_file = "$dir/rdiff-$prog-$old_timestamp.vs.$new_timestamp";
     _is_file_unique( \$diff_file );
     open my $diff_fh, ">", $diff_file;
