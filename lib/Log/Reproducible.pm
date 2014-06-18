@@ -398,22 +398,14 @@ sub _loaded_perl_module_versions {
 sub _dir_info {
     my ( $current, $prog_dir ) = @_;
 
-    my $cwd = getcwd;
-    my $absolute_prog_dir;
-
-    if ( $prog_dir eq "./" ) {
-        $absolute_prog_dir = $cwd;
-    }
-    elsif ( $prog_dir =~ /^\// ) {
-        $absolute_prog_dir = $prog_dir;
-    }
-    else {
-        $absolute_prog_dir = "$cwd/$prog_dir";
-    }
-    my $script_dir = "$prog_dir ($absolute_prog_dir)";
+    my $cwd     = getcwd;
+    my $abs_dir = Cwd::realpath($prog_dir);
 
     $$current{'WORKING DIR'} = $cwd;
-    $$current{'SCRIPT DIR'}  = $script_dir;
+    $$current{'SCRIPT DIR'}
+        = $abs_dir eq $prog_dir
+        ? $abs_dir
+        : { 'ABSOLUTE' => $abs_dir, 'RELATIVE' => $prog_dir };
 }
 
 sub _env_info {
