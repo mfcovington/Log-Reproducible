@@ -321,17 +321,17 @@ sub _git_info {
     my $original_dir = getcwd;
     chdir $prog_dir;
 
-    my $gitbranch = `git rev-parse --abbrev-ref HEAD 2>&1;`;
+    my $gitbranch = `git rev-parse --abbrev-ref HEAD 2>&1`;
     return if $gitbranch =~ /fatal: Not a git repository/;
     chomp $gitbranch;
 
-    my $gitlog = `git log -n1 --oneline;`;
+    my $gitlog = `git log -n1 --oneline`;
     chomp $gitlog;
 
-    my @status = `git status --short;`;
+    my @status = `git status --short`;
     chomp @status;
 
-    my $diffstaged = `git diff --cached;`;
+    my $diffstaged = `git diff --cached`;
     my $diff       = `git diff;`;
 
     $$current{'GIT'} = [
