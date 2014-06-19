@@ -523,12 +523,7 @@ sub _compare_archive_current_string {
     my $arc_string = $$archive{$key};
     my $cur_string = $$current{$key};
     if ( $arc_string ne $cur_string ) {
-        push @$warnings,
-            {
-            message => "Archived and current $key do NOT match",
-            archive => \$arc_string,
-            current => \$cur_string
-            };
+        _raise_warning( $warnings, $key, \$arc_string, \$cur_string );
     }
 }
 
@@ -540,12 +535,7 @@ sub _compare_archive_current_hash {
     my @cur_array
         = map {"$_: $$current{$key}{$_}"} sort keys %{ $$current{$key} };
     if ( join( "", @arc_array ) ne join( "", @cur_array ) ) {
-        push @$warnings,
-            {
-            message => "Archived and current $key do NOT match",
-            archive => \@arc_array,
-            current => \@cur_array
-            };
+        _raise_warning( $warnings, $key, \@arc_array, \@cur_array );
     }
 }
 
@@ -571,13 +561,12 @@ sub _compare_archive_current_array {
         {
             if ( $archive_subgroup{$arc_key} ne $current_subgroup{$cur_key} )
             {
-                push @$warnings,
-                    {
-                    message =>
-                        "Archived and current $group $cur_key do NOT match",
-                    archive => \$archive_subgroup{$arc_key},
-                    current => \$current_subgroup{$cur_key}
-                    };
+                _raise_warning(
+                    $warnings,
+                    "$group $cur_key",
+                    \$archive_subgroup{$arc_key},
+                    \$current_subgroup{$cur_key}
+                );
             }
         }
         elsif (ref( $archive_subgroup{$arc_key} ) eq "ARRAY"
@@ -586,19 +575,29 @@ sub _compare_archive_current_array {
             if (join( "", @{ $archive_subgroup{$arc_key} } ) ne
                 join( "", @{ $current_subgroup{$cur_key} } ) )
             {
-                push @$warnings,
-                    {
-                    message =>
-                        "Archived and current $group $cur_key do NOT match",
-                    archive => $archive_subgroup{$arc_key},
-                    current => $current_subgroup{$cur_key}
-                    };
+                _raise_warning(
+                    $warnings,
+                    "$group $cur_key",
+                    $archive_subgroup{$arc_key},
+                    $current_subgroup{$cur_key}
+                );
             }
         }
         else {
             die "Something is wrong...";
         }
     }
+}
+
+sub _raise_warning {
+    my ( $warnings, $item, $archive, $current ) = @_;
+
+    push @$warnings,
+        {
+        message => "Archived and current $item do NOT match",
+        archive => $archive,
+        current => $current
+        };
 }
 
 sub _summarize_warnings {
