@@ -4,6 +4,7 @@ use warnings;
 use Cwd;
 use File::Path 'make_path';
 use File::Basename;
+use File::Spec;
 use File::Temp ();
 use IPC::Open3;
 use POSIX qw(strftime difftime ceil floor);
@@ -15,7 +16,7 @@ use YAML::Old qw(Dump LoadFile);    # YAML::XS & YAML::Syck aren't working prope
 # TODO: Standalone script that can be used upstream of any command line functions
 # TODO: Auto-build README using POD
 
-our $VERSION = '0.11.2';
+our $VERSION = '0.12.0';
 
 =head1 NAME
 
@@ -266,7 +267,7 @@ sub _reproduce_cmd {
     # Convert array of single-key hashes to single multi-key hash
     my %archived_state;
     for (@$raw_archived_state) {
-        my (@keys) = keys $_;
+        my (@keys) = keys %$_;
         die "Something is wrong..." if scalar @keys != 1;
         $archived_state{ $keys[0] } = $$_{ $keys[0] };
     }
@@ -283,7 +284,8 @@ sub _reproduce_cmd {
     my $diff_file
         = _summarize_warnings( $warnings, $old_repro_file, $repro_file, $dir,
         $prog, $start );
-    _add_warnings( $current, $warnings, $old_repro_file, $diff_file );
+    _add_warnings_to_current_state( $current, $warnings, $old_repro_file,
+        $diff_file );
     return $cmd;
 }
 
@@ -313,20 +315,25 @@ sub _archive_version {
 
 sub _git_info {
     my ( $current, $prog_dir ) = @_;
-    return if `which git` eq '';
 
-    my $gitbranch = `cd $prog_dir; git rev-parse --abbrev-ref HEAD 2>&1;`;
+    my $devnull = File::Spec->devnull();
+    return if `git --version 2> $devnull` eq '';
+
+    my $original_dir = getcwd;
+    chdir $prog_dir;
+
+    my $gitbranch = `git rev-parse --abbrev-ref HEAD 2>&1`;
     return if $gitbranch =~ /fatal: Not a git repository/;
     chomp $gitbranch;
 
-    my $gitlog = `cd $prog_dir; git log -n1 --oneline;`;
+    my $gitlog = `git log -n1 --oneline`;
     chomp $gitlog;
 
-    my @status = `cd $prog_dir; git status --short;`;
+    my @status = `git status --short`;
     chomp @status;
 
-    my $diffstaged = `cd $prog_dir; git diff --cached;`;
-    my $diff       = `cd $prog_dir; git diff;`;
+    my $diffstaged = `git diff --cached`;
+    my $diff       = `git diff`;
 
     $$current{'GIT'} = [
         { 'BRANCH'        => $gitbranch },
@@ -335,6 +342,7 @@ sub _git_info {
         { 'DIFF (STAGED)' => $diffstaged },
         { 'DIFF'          => $diff }
     ];
+    chdir $original_dir;
 }
 
 sub _perl_info {
@@ -391,22 +399,14 @@ sub _loaded_perl_module_versions {
 sub _dir_info {
     my ( $current, $prog_dir ) = @_;
 
-    my $cwd = cwd;
-    my $absolute_prog_dir;
-
-    if ( $prog_dir eq "./" ) {
-        $absolute_prog_dir = $cwd;
-    }
-    elsif ( $prog_dir =~ /^\// ) {
-        $absolute_prog_dir = $prog_dir;
-    }
-    else {
-        $absolute_prog_dir = "$cwd/$prog_dir";
-    }
-    my $script_dir = "$prog_dir ($absolute_prog_dir)";
+    my $cwd     = getcwd;
+    my $abs_dir = Cwd::realpath($prog_dir);
 
     $$current{'WORKING DIR'} = $cwd;
-    $$current{'SCRIPT DIR'}  = $script_dir;
+    $$current{'SCRIPT DIR'}
+        = $abs_dir eq $prog_dir
+        ? $abs_dir
+        : { 'ABSOLUTE' => $abs_dir, 'RELATIVE' => $prog_dir };
 }
 
 sub _env_info {
@@ -437,7 +437,7 @@ sub _dump_yaml_to_archive {
     print $repro_fh Dump [@to_yaml];
 }
 
-sub _add_warnings {
+sub _add_warnings_to_current_state {
     my ( $current, $warnings, $old_repro_file, $diff_file ) = @_;
 
     $diff_file
@@ -507,37 +507,46 @@ EOF
 sub _validate_archived_info {
     my ( $archived_state, $current, $warnings ) = @_;
 
+    _compare_archive_current_string( $archived_state, $current,
+        'ARCHIVE VERSION', $warnings );
     for my $group (qw(PERL GIT)) {
-        _compare_archive_current_array_or_string( $archived_state, $current,
-            $group, $warnings );
+        _compare_archive_current_array( $archived_state, $current, $group,
+            $warnings );
     }
     _compare_archive_current_hash( $archived_state, $current, 'ENV',
         $warnings );
 }
 
-sub _compare_archive_current_hash {
+sub _compare_archive_current_string {
     my ( $archive, $current, $key, $warnings ) = @_;
 
-    my @arc_array = map {"$_: $$archive{$key}{$_}"} sort keys $$archive{$key};
-    my @cur_array = map {"$_: $$current{$key}{$_}"} sort keys $$current{$key};
-    if ( join( "", @arc_array ) ne join( "", @cur_array ) ) {
-        push @$warnings,
-            {
-            message => "Archived and current $key do NOT match",
-            archive => \@arc_array,
-            current => \@cur_array
-            };
+    my $arc_string = $$archive{$key};
+    my $cur_string = $$current{$key};
+    if ( $arc_string ne $cur_string ) {
+        _raise_warning( $warnings, $key, \$arc_string, \$cur_string );
     }
 }
 
-sub _compare_archive_current_array_or_string {
+sub _compare_archive_current_hash {
+    my ( $archive, $current, $key, $warnings ) = @_;
+
+    my @arc_array
+        = map {"$_: $$archive{$key}{$_}"} sort keys %{ $$archive{$key} };
+    my @cur_array
+        = map {"$_: $$current{$key}{$_}"} sort keys %{ $$current{$key} };
+    if ( join( "", @arc_array ) ne join( "", @cur_array ) ) {
+        _raise_warning( $warnings, $key, \@arc_array, \@cur_array );
+    }
+}
+
+sub _compare_archive_current_array {
     my ( $archive, $current, $group, $warnings ) = @_;
 
     for ( 0 .. $#{ $$archive{$group} } ) {
         my %archive_subgroup;
         my %current_subgroup;
-        my ( $arc_key, $too_many_ak ) = keys $$archive{$group}->[$_];
-        my ( $cur_key, $too_many_ck ) = keys $$current{$group}->[$_];
+        my ( $arc_key, $too_many_ak ) = keys %{ $$archive{$group}->[$_] };
+        my ( $cur_key, $too_many_ck ) = keys %{ $$current{$group}->[$_] };
 
         die "Something is wrong..."
             if $arc_key ne $cur_key
@@ -552,13 +561,12 @@ sub _compare_archive_current_array_or_string {
         {
             if ( $archive_subgroup{$arc_key} ne $current_subgroup{$cur_key} )
             {
-                push @$warnings,
-                    {
-                    message =>
-                        "Archived and current $group $cur_key do NOT match",
-                    archive => \$archive_subgroup{$arc_key},
-                    current => \$current_subgroup{$cur_key}
-                    };
+                _raise_warning(
+                    $warnings,
+                    "$group $cur_key",
+                    \$archive_subgroup{$arc_key},
+                    \$current_subgroup{$cur_key}
+                );
             }
         }
         elsif (ref( $archive_subgroup{$arc_key} ) eq "ARRAY"
@@ -567,19 +575,29 @@ sub _compare_archive_current_array_or_string {
             if (join( "", @{ $archive_subgroup{$arc_key} } ) ne
                 join( "", @{ $current_subgroup{$cur_key} } ) )
             {
-                push @$warnings,
-                    {
-                    message =>
-                        "Archived and current $group $cur_key do NOT match",
-                    archive => $archive_subgroup{$arc_key},
-                    current => $current_subgroup{$cur_key}
-                    };
+                _raise_warning(
+                    $warnings,
+                    "$group $cur_key",
+                    $archive_subgroup{$arc_key},
+                    $current_subgroup{$cur_key}
+                );
             }
         }
         else {
             die "Something is wrong...";
         }
     }
+}
+
+sub _raise_warning {
+    my ( $warnings, $item, $archive, $current ) = @_;
+
+    push @$warnings,
+        {
+        message => "Archived and current $item do NOT match",
+        archive => $archive,
+        current => $current
+        };
 }
 
 sub _summarize_warnings {
