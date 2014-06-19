@@ -252,13 +252,22 @@ use Log::Reproducible { repronote => 'note' };
 
 ## Installation
 
-`Log::Reproducible` can be installed using the `autobuild.sh` script or by running the following commands:
+`Log::Reproducible` can be installed using the `autobuild.sh` script or by running the following commands on *nix systems:
 
 ```sh
 perl Build.pl
 ./Build
 ./Build test
 ./Build install
+```
+
+On Windows, use `autobuild.bat` or:
+
+```sh
+perl Build.pl
+Build
+Build test
+Build install
 ```
 
 ## Future Directions
