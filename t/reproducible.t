@@ -34,7 +34,7 @@ my $archive_dir = "$Bin/repro-archive";
 my $cmd         = "perl $Bin/$script --reprodir $archive_dir";
 
 my $devnull = File::Spec->devnull();
-@got = `$cmd -a 1 -b 'two words' -c string some other stuff 2> $devnull`;
+@got = `$cmd -a 1 -b "two words" -c string some other stuff 2> $devnull`;
 is_deeply( \@got, $expected, 'Run and archive Perl script' );
 
 my $archive = get_recent_archive($archive_dir);
