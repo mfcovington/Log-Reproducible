@@ -10,6 +10,7 @@ use Test::More tests => 8;
 use FindBin qw($Bin);
 use lib "$Bin/../lib";
 use Cwd;
+use File::Spec;
 
 # TODO: Account for systems with REPRO_DIR environmental variable set
 # TODO: Need to update tests to account for new features
@@ -32,11 +33,12 @@ my $script      = "test-reproducible.pl";
 my $archive_dir = "$Bin/repro-archive";
 my $cmd         = "perl $Bin/$script --reprodir $archive_dir";
 
-@got = `$cmd -a 1 -b 'two words' -c string some other stuff 2> /dev/null`;
+my $devnull = File::Spec->devnull();
+@got = `$cmd -a 1 -b "two words" -c string some other stuff 2> $devnull`;
 is_deeply( \@got, $expected, 'Run and archive Perl script' );
 
 my $archive = get_recent_archive($archive_dir);
-@got = `$cmd --reproduce $archive_dir/$archive 2> /dev/null`;
+@got = `$cmd --reproduce $archive_dir/$archive 2> $devnull`;
 is_deeply( \@got, $expected, 'Run an archived Perl script' );
 
 subtest 'Time tests' => sub {
