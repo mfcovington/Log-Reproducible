@@ -333,7 +333,7 @@ sub _git_info {
     chomp @status;
 
     my $diffstaged = `git diff --cached`;
-    my $diff       = `git diff;`;
+    my $diff       = `git diff`;
 
     $$current{'GIT'} = [
         { 'BRANCH'        => $gitbranch },
