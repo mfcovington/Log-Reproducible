@@ -1,5 +1,10 @@
 Revision history for Perl module Log::Reproducible
 
+0.12.0 2014-06-18
+
+  - Make Windows-friendly (at least Win7 w/ Strawberry Perl 5.18.2 & Git 1.9.4 via CMD)
+  - Fix bug associated with Perl versions before 5.14 (introduced in 0.11.0)
+
 0.11.2 2014-06-17
 
   - Spring cleaning
