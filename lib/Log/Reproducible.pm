@@ -506,12 +506,29 @@ EOF
 sub _validate_archived_info {
     my ( $archived_state, $current, $warnings ) = @_;
 
+    _compare_archive_current_string( $archived_state, $current,
+        'ARCHIVE VERSION', $warnings );
     for my $group (qw(PERL GIT)) {
-        _compare_archive_current_array_or_string( $archived_state, $current,
-            $group, $warnings );
+        _compare_archive_current_array( $archived_state, $current, $group,
+            $warnings );
     }
     _compare_archive_current_hash( $archived_state, $current, 'ENV',
         $warnings );
+}
+
+sub _compare_archive_current_string {
+    my ( $archive, $current, $key, $warnings ) = @_;
+
+    my $arc_string = $$archive{$key};
+    my $cur_string = $$current{$key};
+    if ( $arc_string ne $cur_string ) {
+        push @$warnings,
+            {
+            message => "Archived and current $key do NOT match",
+            archive => \$arc_string,
+            current => \$cur_string
+            };
+    }
 }
 
 sub _compare_archive_current_hash {
@@ -531,7 +548,7 @@ sub _compare_archive_current_hash {
     }
 }
 
-sub _compare_archive_current_array_or_string {
+sub _compare_archive_current_array {
     my ( $archive, $current, $group, $warnings ) = @_;
 
     for ( 0 .. $#{ $$archive{$group} } ) {
