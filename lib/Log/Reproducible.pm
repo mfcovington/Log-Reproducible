@@ -284,7 +284,8 @@ sub _reproduce_cmd {
     my $diff_file
         = _summarize_warnings( $warnings, $old_repro_file, $repro_file, $dir,
         $prog, $start );
-    _add_warnings( $current, $warnings, $old_repro_file, $diff_file );
+    _add_warnings_to_current_state( $current, $warnings, $old_repro_file,
+        $diff_file );
     return $cmd;
 }
 
@@ -436,7 +437,7 @@ sub _dump_yaml_to_archive {
     print $repro_fh Dump [@to_yaml];
 }
 
-sub _add_warnings {
+sub _add_warnings_to_current_state {
     my ( $current, $warnings, $old_repro_file, $diff_file ) = @_;
 
     $diff_file
