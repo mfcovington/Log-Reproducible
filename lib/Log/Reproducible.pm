@@ -387,7 +387,8 @@ sub _loaded_perl_module_versions {
         $NOWARN = 1;
         eval "require $mod";
         next if $@;
-        my $version = $mod->VERSION;
+        eval "$mod->VERSION";
+        my $version = $@ ? "?" : $mod->VERSION;
         $NOWARN = 0;
         next unless defined $version;
         push @module_versions, "$mod $version";
