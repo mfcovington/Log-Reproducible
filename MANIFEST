@@ -1,6 +1,6 @@
 autobuild.bat
 autobuild.sh
-Build.pl
+Build.PL
 CHANGES
 cover.pl
 future-README.md
