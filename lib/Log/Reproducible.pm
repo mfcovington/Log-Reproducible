@@ -7,6 +7,7 @@ use File::Basename;
 use File::Spec;
 use File::Temp ();
 use IPC::Open3;
+use List::MoreUtils 'first_index';
 use POSIX qw(strftime difftime ceil floor);
 use Config;
 use YAML::Old qw(Dump LoadFile);    # YAML::XS & YAML::Syck aren't working properly
@@ -120,15 +121,6 @@ sub import {
     _reproducibility_is_important($custom_repro_opts);
 }
 
-sub _first_index (&@) {    # From v0.33 of the wonderful List::MoreUtils
-    my $f = shift;         # https://metacpan.org/pod/List::MoreUtils
-    foreach my $i ( 0 .. $#_ ) {
-        local *_ = \$_[$i];
-        return $i if $f->();
-    }
-    return -1;
-}
-
 sub _reproducibility_is_important {
     my $custom_repro_opts = shift;
 
@@ -216,7 +208,7 @@ sub _parse_command {
 sub _get_repro_arg {
     my ( $repro_opt, $argv_current ) = @_;
     my $repro_arg;
-    my $argv_idx = _first_index { $_ =~ /^-?-$repro_opt$/ } @$argv_current;
+    my $argv_idx = first_index { $_ =~ /^-?-$repro_opt$/ } @$argv_current;
     if ( $argv_idx > -1 ) {
         $repro_arg = $$argv_current[ $argv_idx + 1 ];
         splice @$argv_current, $argv_idx, 2;
