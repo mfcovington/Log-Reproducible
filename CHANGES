@@ -1,5 +1,13 @@
 Revision history for Perl module Log::Reproducible
 
+0.12.1 2014-10-16
+
+  - Log when an archive is reproduced
+  - Fix perlr's notes w/ spaces bug
+  - Force short multi-line notes to span lines
+  - Use Travis-CI and Coveralls.io
+  - Use external version of first_index(), since no longer dependency-free
+
 0.12.0 2014-06-18
 
   - Make Windows-friendly (at least Win7 w/ Strawberry Perl 5.18.2 & Git 1.9.4 via CMD)
