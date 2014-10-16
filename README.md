@@ -104,6 +104,7 @@ This results in:
 2. The creation of a new archive file identical to the older one, except with:
     - an updated date and time
     - the addition of /path/to/the/old/archive
+3. The reproduction information being logged in the original archive
 
 #### Inconsistencies between current and archived conditions
 
