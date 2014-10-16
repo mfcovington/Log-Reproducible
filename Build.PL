@@ -4,7 +4,6 @@ use warnings FATAL => 'all';
 use Module::Build;
 
 # TODO: Add version specifications for requirements
-# TODO: Add perl + version to requirements
 
 my $module_file = "lib/Log/Reproducible.pm";
 my @scripts = grep { -f and !-d } glob 'script/*';
@@ -22,14 +21,16 @@ my $builder = Module::Build->new(
     license            => 'perl',
     create_makefile_pl => 0,
     requires           => {
-        "Config"         => 0,
-        "Cwd"            => 0,
-        "File::Basename" => 0,
-        "File::Path"     => 0,
-        "File::Temp"     => 0,
-        "IPC::Open3"     => 0,
-        "POSIX"          => 0,
-        "YAML::Old"      => 0,
+        'perl'            => 5.006,
+        "Config"          => 0,
+        "Cwd"             => 0,
+        "File::Basename"  => 0,
+        "File::Path"      => 0,
+        "File::Temp"      => 0,
+        "IPC::Open3"      => 0,
+        "List::MoreUtils" => 0,
+        "POSIX"           => 0,
+        "YAML::Old"       => 0,
     },
     build_requires => {
         'Test::More' => 0,

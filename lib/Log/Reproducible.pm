@@ -7,6 +7,7 @@ use File::Basename;
 use File::Spec;
 use File::Temp ();
 use IPC::Open3;
+use List::MoreUtils 'first_index';
 use POSIX qw(strftime difftime ceil floor);
 use Config;
 use YAML::Old qw(Dump LoadFile);    # YAML::XS & YAML::Syck aren't working properly
@@ -16,7 +17,7 @@ use YAML::Old qw(Dump LoadFile);    # YAML::XS & YAML::Syck aren't working prope
 # TODO: Standalone script that can be used upstream of any command line functions
 # TODO: Auto-build README using POD
 
-our $VERSION = '0.12.0';
+our $VERSION = '0.12.1';
 
 =head1 NAME
 
@@ -120,15 +121,6 @@ sub import {
     _reproducibility_is_important($custom_repro_opts);
 }
 
-sub _first_index (&@) {    # From v0.33 of the wonderful List::MoreUtils
-    my $f = shift;         # https://metacpan.org/pod/List::MoreUtils
-    foreach my $i ( 0 .. $#_ ) {
-        local *_ = \$_[$i];
-        return $i if $f->();
-    }
-    return -1;
-}
-
 sub _reproducibility_is_important {
     my $custom_repro_opts = shift;
 
@@ -216,7 +208,7 @@ sub _parse_command {
 sub _get_repro_arg {
     my ( $repro_opt, $argv_current ) = @_;
     my $repro_arg;
-    my $argv_idx = _first_index { $_ =~ /^-?-$repro_opt$/ } @$argv_current;
+    my $argv_idx = first_index { $_ =~ /^-?-$repro_opt$/ } @$argv_current;
     if ( $argv_idx > -1 ) {
         $repro_arg = $$argv_current[ $argv_idx + 1 ];
         splice @$argv_current, $argv_idx, 2;
@@ -262,7 +254,8 @@ sub _reproduce_cmd {
         $warnings, $start )
         = @_;
 
-    my $raw_archived_state = LoadFile($old_repro_file);
+    my ( $raw_archived_state, $has_been_reproduced )
+        = LoadFile($old_repro_file);
 
     # Convert array of single-key hashes to single multi-key hash
     my %archived_state;
@@ -286,7 +279,23 @@ sub _reproduce_cmd {
         $prog, $start );
     _add_warnings_to_current_state( $current, $warnings, $old_repro_file,
         $diff_file );
+    _log_reproduction_event( $old_repro_file, $repro_file, $current,
+        $has_been_reproduced );
     return $cmd;
+}
+
+sub _log_reproduction_event {
+    my ( $old_repro_file, $new_repro_file, $current, $has_been_reproduced )
+        = @_;
+
+    open my $old_repro_fh, ">>", $old_repro_file
+        or die "Cannot open $old_repro_file for appending: $!";
+
+    print $old_repro_fh "---\n- REPRODUCED AS:\n"
+        unless defined $has_been_reproduced;
+    print $old_repro_fh "    - $new_repro_file $$current{'STARTED'}\n";
+
+    close $old_repro_fh;
 }
 
 sub _archive_cmd {
@@ -387,7 +396,8 @@ sub _loaded_perl_module_versions {
         $NOWARN = 1;
         eval "require $mod";
         next if $@;
-        my $version = $mod->VERSION;
+        eval "$mod->VERSION";
+        my $version = $@ ? "?" : $mod->VERSION;
         $NOWARN = 0;
         next unless defined $version;
         push @module_versions, "$mod $version";
@@ -416,6 +426,8 @@ sub _env_info {
 
 sub _dump_yaml_to_archive {
     my ( $current, $repro_fh ) = @_;
+
+    local $YAML::UseBlock = 1;    # Force short multi-line notes to span lines
 
     my @to_yaml = (
         { 'COMMAND' => $$current{'COMMAND'} },
