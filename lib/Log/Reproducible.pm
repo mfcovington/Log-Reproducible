@@ -254,7 +254,8 @@ sub _reproduce_cmd {
         $warnings, $start )
         = @_;
 
-    my $raw_archived_state = LoadFile($old_repro_file);
+    my ( $raw_archived_state, $has_been_reproduced )
+        = LoadFile($old_repro_file);
 
     # Convert array of single-key hashes to single multi-key hash
     my %archived_state;
@@ -278,7 +279,23 @@ sub _reproduce_cmd {
         $prog, $start );
     _add_warnings_to_current_state( $current, $warnings, $old_repro_file,
         $diff_file );
+    _log_reproduction_event( $old_repro_file, $repro_file, $current,
+        $has_been_reproduced );
     return $cmd;
+}
+
+sub _log_reproduction_event {
+    my ( $old_repro_file, $new_repro_file, $current, $has_been_reproduced )
+        = @_;
+
+    open my $old_repro_fh, ">>", $old_repro_file
+        or die "Cannot open $old_repro_file for appending: $!";
+
+    print $old_repro_fh "---\n- REPRODUCED AS:\n"
+        unless defined $has_been_reproduced;
+    print $old_repro_fh "    - $new_repro_file $$current{'STARTED'}\n";
+
+    close $old_repro_fh;
 }
 
 sub _archive_cmd {
