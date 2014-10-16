@@ -427,6 +427,8 @@ sub _env_info {
 sub _dump_yaml_to_archive {
     my ( $current, $repro_fh ) = @_;
 
+    local $YAML::UseBlock = 1;    # Force short multi-line notes to span lines
+
     my @to_yaml = (
         { 'COMMAND' => $$current{'COMMAND'} },
         { 'NOTE'    => $$current{'NOTE'} },
