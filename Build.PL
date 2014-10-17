@@ -8,12 +8,12 @@ use Module::Build;
 my $module_file = "lib/Log/Reproducible.pm";
 my @scripts = grep { -f and !-d } glob 'script/*';
 
-eval "use Pod::Markdown";
-if ( ! $@ ) {
-    require Pod::Markdown;
-    my $readme_file = "future-README.md";
-    pod2markdown( $module_file, $readme_file );
-}
+# eval "use Pod::Markdown";
+# if ( ! $@ ) {
+#     require Pod::Markdown;
+#     my $readme_file = "future-README.md";
+#     pod2markdown( $module_file, $readme_file );
+# }
 
 my $builder = Module::Build->new(
     module_name        => 'Log::Reproducible',
@@ -41,7 +41,7 @@ my $builder = Module::Build->new(
     recommends => {
         'Devel::Cover'   => 0,    # To generate testing coverage report
         'Module::Loaded' => 0,    # To test for loading of known conflicting modules
-        'Pod::Markdown'  => 0,    # To auto-generate README from POD markup
+        # 'Pod::Markdown'  => 0,    # To auto-generate README from POD markup
         'Text::Diff'     => 0,    # To summarize Archived vs Current differences
     },
     script_files   => [ @scripts ],
@@ -57,12 +57,12 @@ $builder->create_build_script;
 
 exit;
 
-sub pod2markdown {
-    my ( $pod_file, $markdown_file ) = @_;
-    open my $markdown_fh, ">", $markdown_file
-        or die "Cannot open $markdown_file for writing: $!";
-    my $parser = Pod::Markdown->new();
-    $parser->output_fh($markdown_fh);
-    $parser->parse_file($pod_file);
-    close $markdown_fh;
-}
+# sub pod2markdown {
+#     my ( $pod_file, $markdown_file ) = @_;
+#     open my $markdown_fh, ">", $markdown_file
+#         or die "Cannot open $markdown_file for writing: $!";
+#     my $parser = Pod::Markdown->new();
+#     $parser->output_fh($markdown_fh);
+#     $parser->parse_file($pod_file);
+#     close $markdown_fh;
+# }

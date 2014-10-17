@@ -1,3 +1,5 @@
+*CPAN-compatible README coming soon...*
+
 # Log::Reproducible (0.12.1)
 
 Increase your reproducibility with the Perl module Log::Reproducible. 
