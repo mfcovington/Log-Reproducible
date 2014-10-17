@@ -1,0 +1,30 @@
+# Site settings
+title: 'Log::Reproducible for Perl'
+tagline: Set it and forget it... <em>until you need it!</em>
+email: mfcovington@gmail.com
+description: > # this means to ignore newlines until "baseurl:"
+  This site contains the documentation for Log::Reproducible,
+  a Perl 5 module to help improve reproducibility.
+  Log::Reproducible is available via CPAN and GitHub.
+baseurl: "/Log-Reproducible" # the subpath of your site, e.g. /blog/
+url: "http://0.0.0.0:4000" # the base hostname & protocol for your site
+twitter_username: bamfcovington
+github_username:  mfcovington
+perlmonks:
+  - frozenwithjoy # username
+  - 971084        # user node ID (e.g. 971084 in http://www.perlmonks.org/?node_id=971084)
+cpan_username: covington
+website:  http://mfcovington.github.io
+author: Mike Covington
+contact:
+  - Mike Covington
+  - Assistant Project Scientist
+  - Department of Plant Biology
+  - University of California, Davis
+
+# Build settings
+# markdown: kramdown
+markdown: redcarpet
+highlighter: pygments
+permalink: docs/:title/
+# permalink: none

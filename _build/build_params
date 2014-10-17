@@ -1,0 +1,146 @@
+do{ my $x = [
+       {
+         'ARGV' => []
+       },
+       {},
+       {
+         'create_license' => undef,
+         'xs_files' => undef,
+         'dist_version' => 'v0.12.1',
+         'debug' => undef,
+         'meta_merge' => {
+                           'resources' => {
+                                            'repository' => 'https://github.com/mfcovington/Log-Reproducible'
+                                          }
+                         },
+         'tap_harness_args' => {},
+         'pm_files' => undef,
+         'verbose' => undef,
+         'module_name' => 'Log::Reproducible',
+         'install_base' => undef,
+         'orig_dir' => '/Users/mfc/git.repos/reproducible',
+         'script_files' => [
+                             'script/perlr'
+                           ],
+         'program_name' => undef,
+         'extra_linker_flags' => [],
+         'recommends' => {
+                           'Text::Diff' => 0,
+                           'Devel::Cover' => 0,
+                           'Module::Loaded' => 0
+                         },
+         'extra_manify_args' => undef,
+         'cpan_client' => 'cpan',
+         'install_base_relpaths' => {},
+         'get_options' => {},
+         'use_rcfile' => 1,
+         'mymetafile2' => 'MYMETA.json',
+         'html_css' => '',
+         'prefix_relpaths' => {},
+         'share_dir' => undef,
+         'config' => undef,
+         'configure_requires' => {
+                                   'Module::Build' => 0
+                                 },
+         'test_requires' => {},
+         'mymetafile' => 'MYMETA.yml',
+         'prereq_action_types' => [
+                                    'requires',
+                                    'build_requires',
+                                    'test_requires',
+                                    'conflicts',
+                                    'recommends'
+                                  ],
+         'quiet' => undef,
+         'bundle_inc_preload' => [],
+         'dist_version_from' => 'lib/Log/Reproducible.pm',
+         'release_status' => 'stable',
+         'conflicts' => {},
+         'auto_configure_requires' => 1,
+         'metafile' => 'META.yml',
+         '_added_to_INC' => [
+                              '/usr/local/Cellar/vcftools/0.1.12a-1/lib/perl5/site_perl'
+                            ],
+         'create_packlist' => 1,
+         'build_requires' => {
+                               'Test::More' => 0
+                             },
+         'build_class' => 'Module::Build',
+         'pollute' => undef,
+         'perl' => '/Users/mfc/perl5/perlbrew/perls/perl-5.20.0/bin/perl',
+         'config_dir' => '_build',
+         'metafile2' => 'META.json',
+         'bindoc_dirs' => [
+                            'blib/script'
+                          ],
+         'dist_name' => 'Log-Reproducible',
+         'prefix' => undef,
+         'allow_mb_mismatch' => 0,
+         'build_script' => 'Build',
+         'has_config_data' => undef,
+         'meta_add' => {},
+         'build_elements' => [
+                               'PL',
+                               'support',
+                               'pm',
+                               'xs',
+                               'share_dir',
+                               'pod',
+                               'script'
+                             ],
+         'sign' => undef,
+         'dynamic_config' => 1,
+         'bundle_inc' => [],
+         'PL_files' => undef,
+         'libdoc_dirs' => [
+                            'blib/lib',
+                            'blib/arch'
+                          ],
+         'needs_compiler' => '',
+         'dist_author' => undef,
+         'blib' => 'blib',
+         'test_files' => undef,
+         'license' => 'perl',
+         'requires' => {
+                         'POSIX' => 0,
+                         'IPC::Open3' => 0,
+                         'List::MoreUtils' => 0,
+                         'File::Basename' => 0,
+                         'Cwd' => 0,
+                         'perl' => '5.006',
+                         'YAML::Old' => 0,
+                         'File::Temp' => 0,
+                         'File::Path' => 0,
+                         'Config' => 0
+                       },
+         'install_path' => {},
+         'recurse_into' => [],
+         'use_tap_harness' => 0,
+         'create_readme' => undef,
+         'scripts' => undef,
+         'pod_files' => undef,
+         'debugger' => undef,
+         'build_bat' => 0,
+         'allow_pureperl' => 0,
+         'magic_number' => undef,
+         'recursive_test_files' => undef,
+         'original_prefix' => {},
+         'installdirs' => 'site',
+         'autosplit' => undef,
+         'test_file_exts' => [
+                               '.t'
+                             ],
+         'extra_compiler_flags' => [],
+         'c_source' => undef,
+         'dist_abstract' => undef,
+         'dist_suffix' => undef,
+         'mb_version' => '0.4206',
+         'destdir' => undef,
+         'pureperl_only' => 0,
+         'create_makefile_pl' => 0,
+         'install_sets' => {},
+         'include_dirs' => [],
+         'base_dir' => '/Users/mfc/git.repos/reproducible'
+       }
+     ];
+$x; }

@@ -1,0 +1,28 @@
+do{ my $x = {
+       'Log-Reproducible-v0.9.0_99' => 1,
+       'Log-Reproducible-v0.8.0' => 1,
+       'Log-Reproducible-0.8' => 1,
+       'Log-Reproducible-v0.12.1' => 1,
+       'Log-Reproducible-v0.9.1' => 1,
+       'Log-Reproducible-v0.9.2' => 1,
+       'Log-Reproducible-v0.8.2' => 1,
+       'coverage' => 1,
+       'Log-Reproducible-v0.9.2_99' => 1,
+       'Log-Reproducible-v0.11.0' => 1,
+       'Log-Reproducible-v0.11.2' => 1,
+       'Log-Reproducible-v0.8.1_0' => 1,
+       'Log-Reproducible-0.7' => 1,
+       'cover_db' => 1,
+       'Log-Reproducible-v0.8.1' => 1,
+       'Log-Reproducible-v0.12.1_99' => 1,
+       'Log-Reproducible-v0.8.1_99' => 1,
+       'Log-Reproducible-v0.9.1_99' => 1,
+       'Log-Reproducible-v0.9.0' => 1,
+       'Log-Reproducible-v0.12.0_99' => 1,
+       'Log-Reproducible-v0.10.0' => 1,
+       'Log-Reproducible-v0.12.0' => 1,
+       'Log-Reproducible-v0.7.3' => 1,
+       'Log-Reproducible-v0.8.1.1' => 1,
+       'blib' => 1
+     };
+$x; }

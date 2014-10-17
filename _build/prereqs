@@ -1,0 +1,25 @@
+do{ my $x = {
+       'recommends' => {
+                         'Text::Diff' => 0,
+                         'Devel::Cover' => 0,
+                         'Module::Loaded' => 0
+                       },
+       'test_requires' => {},
+       'build_requires' => {
+                             'Test::More' => 0
+                           },
+       'conflicts' => {},
+       'requires' => {
+                       'POSIX' => 0,
+                       'IPC::Open3' => 0,
+                       'List::MoreUtils' => 0,
+                       'File::Basename' => 0,
+                       'Cwd' => 0,
+                       'perl' => '5.006',
+                       'YAML::Old' => 0,
+                       'File::Temp' => 0,
+                       'File::Path' => 0,
+                       'Config' => 0
+                     }
+     };
+$x; }
