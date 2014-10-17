@@ -45,6 +45,12 @@ my $builder = Module::Build->new(
         'Text::Diff'     => 0,    # To summarize Archived vs Current differences
     },
     script_files   => [ @scripts ],
+    meta_merge => {
+        resources => {
+            repository =>
+                'https://github.com/mfcovington/Log-Reproducible'
+        }
+    },
 );
 
 $builder->create_build_script;
