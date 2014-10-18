@@ -15,7 +15,7 @@ Since I write lots of code and run lots of scripts, one way I improved reproduci
 
 <!-- **TAGLINE:** Set it and forget it... *until you need it!* -->
 
-### How does Log::Reproducible increase reproducibility?
+### How Log::Reproducible increases reproducibility
 
 - Provides [effortless and thorough record keeping]({{ site.baseurl}}{% post_url 2014-02-01-archive %}) of the conditions under which scripts are run
 - Allows [easy replication]({{ site.baseurl}}{% post_url 2014-04-01-reproduce %}) of these conditions
