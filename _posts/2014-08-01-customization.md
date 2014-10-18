@@ -4,7 +4,7 @@ title:   Customizing Command Line Options
 to_prev: location
 to_next: 
 ---
-It is possible to customize the names of the command line options that Log::Reproducible uses. This is important if there is a conflict with the option names of your script. It can also help save time by decreasing the number of keystrokes required. To override one or more of the defaults ([`reprodir`]({{ site.url }}{{ site.baseurl }}/docs/location/), [`reproduce`]({{ site.url }}{{ site.baseurl }}/docs/reproduce/), and [`repronote`]({{ site.url }}{{ site.baseurl }}/docs/notes/)), pass a hash reference when calling Log::Reproducible from your script:
+It is possible to customize the names of the command line options that Log::Reproducible uses. This is important if there is a conflict with the option names of your script. It can also help save time by decreasing the number of keystrokes required. To override one or more of the defaults ([`--reprodir`]({{ site.url }}{{ site.baseurl }}/docs/location/), [`--reproduce`]({{ site.url }}{{ site.baseurl }}/docs/reproduce/), and [`--repronote`]({{ site.url }}{{ site.baseurl }}/docs/notes/)), pass a hash reference when calling Log::Reproducible from your script:
 
 ```perl
 use Log::Reproducible {
