@@ -32,7 +32,8 @@ wget -O - http://cpanmin.us | perl - App::cpanminus
 
 Get Log::Reproducible using one of two methods:
 
-- Create a local clone the git repository on your computer: `git clone https://github.com/mfcovington/Log-Reproducible.git`
+- Create a local clone the git repository on your computer:
+    - `git clone https://github.com/mfcovington/Log-Reproducible.git`
 - Download and extract the any version of Log::Reproducible as a `zip` or `tar.gz` archive from [GitHub](https://github.com/mfcovington/Log-Reproducible/releases).
 
 #### Build and Install

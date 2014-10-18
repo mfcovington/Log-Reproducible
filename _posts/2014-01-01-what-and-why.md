@@ -17,7 +17,6 @@ Since I write lots of code and run lots of scripts, one way I improved reproduci
 
 ### How Log::Reproducible increases reproducibility
 
-- Provides [effortless and thorough record keeping]({{ site.baseurl}}{% post_url 2014-02-01-archive %}) of the conditions under which scripts are run
-- Allows [easy replication]({{ site.baseurl}}{% post_url 2014-04-01-reproduce %}) of these conditions
-- Detects and [reports inconsistencies](#inconsistencies-between-current-and-archived-conditions) between archived and replicated conditions.
-
+- Provides [effortless and thorough record keeping]({{ site.url }}{{ site.baseurl }}/docs/archive/) of the conditions under which scripts are run
+- Allows [easy replication]({{ site.url }}{{ site.baseurl }}/docs/reproduce/) of these conditions
+- Detects and [reports inconsistencies]({{ site.url }}{{ site.baseurl }}/docs/inconsistencies/) between archived and replicated conditions.
