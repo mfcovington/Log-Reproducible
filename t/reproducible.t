@@ -12,6 +12,8 @@ use FindBin qw($Bin);
 use lib "$Bin/../lib";
 use Cwd;
 use Capture::Tiny 'capture';
+use locale;
+use POSIX qw(locale_h);
 
 # TODO: Account for systems with REPRO_DIR environmental variable set
 # TODO: Need to update tests to account for new features
@@ -29,6 +31,9 @@ if ( $^O ne 'VMS' ) {
     $secure_perl_path .= $Config{_exe}
         unless $secure_perl_path =~ m/$Config{_exe}$/i;
 }
+
+# Avoid failing time tests due to non-English locales
+setlocale(LC_ALL, "C");
 
 my ( $got, $stderr, $exit );
 my $expected = <<EOF;
