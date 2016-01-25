@@ -1,5 +1,9 @@
 Revision history for Perl module Log::Reproducible
 
+0.12.2 2016-01-25
+
+  - Improve tests
+
 0.12.1 2014-10-16
 
   - Log when an archive is reproduced
