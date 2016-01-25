@@ -10,7 +10,7 @@ use Test::More tests => 8;
 use FindBin qw($Bin);
 use lib "$Bin/../lib";
 use Cwd;
-use File::Spec;
+use Capture::Tiny 'capture';
 
 # TODO: Account for systems with REPRO_DIR environmental variable set
 # TODO: Need to update tests to account for new features
@@ -22,24 +22,29 @@ BEGIN {
 }
 my $cwd = getcwd;
 
-my @got;
-my $expected = [
-    "a: 1\n",
-    "b: 'two words'\n",
-    "c: string\n",
-    "extra: some other stuff\n"
-];
+my ( $got, $stderr, $exit );
+my $expected = <<EOF;
+a: 1
+b: 'two words'
+c: string
+extra: some other stuff
+EOF
 my $script      = "test-reproducible.pl";
 my $archive_dir = "$Bin/repro-archive";
 my $cmd         = "perl $Bin/$script --reprodir $archive_dir";
 
-my $devnull = File::Spec->devnull();
-@got = `$cmd -a 1 -b "two words" -c string some other stuff 2> $devnull`;
-is_deeply( \@got, $expected, 'Run and archive Perl script' );
+( $got, $stderr, $exit ) = capture {
+    system("$cmd -a 1 -b 'two words' -c string some other stuff");
+};
+die $stderr if $exit != 0;
+is_deeply( $got, $expected, 'Run and archive Perl script' );
 
 my $archive = get_recent_archive($archive_dir);
-@got = `$cmd --reproduce $archive_dir/$archive 2> $devnull`;
-is_deeply( \@got, $expected, 'Run an archived Perl script' );
+( $got, $stderr, $exit ) = capture {
+    system("sleep 0; $cmd --reproduce $archive_dir/$archive");
+};
+die $stderr if $exit != 0;
+is_deeply( $got, $expected, 'Run an archived Perl script' );
 
 subtest 'Time tests' => sub {
     plan tests => 4;
