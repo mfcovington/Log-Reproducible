@@ -35,7 +35,7 @@ Now, every time you run your script, the command line options and other argument
 
 #### With the `perlr` wrapper
 
-Can't or don't want to modify your script? When you install Log::Reproducible, a wrapper program called `perlr` gets installed in your path. Running scripts with `perlr` automatically loads Log::Reproducible even if your script doesn't. 
+Can't or don't want to modify your script? When you install Log::Reproducible, a wrapper program called `perlr` gets installed in your path. Running scripts with `perlr` automatically loads Log::Reproducible even if your script doesn't.
 
 ```sh
 perlr script-without-log-reproducible.pl
@@ -182,8 +182,8 @@ perl sample.pl --reprodir /path/to/archive
 If git is installed on your system and your script resides within a Git repository, a useful collection of info about the current state of the Git repository will be included in the archive:
 
 - Current branch
-- Truncated SHA1 hash of most recent commit 
-- Commit message of most recent commit 
+- Truncated SHA1 hash of most recent commit
+- Commit message of most recent commit
 - List of modified, added, removed, and unstaged files
 - A summary of changes to previously committed files (both staged and unstaged)
 
