@@ -6,6 +6,7 @@
 #
 use strict;
 use warnings;
+use Config;
 use Test::More tests => 8;
 use FindBin qw($Bin);
 use lib "$Bin/../lib";
@@ -22,6 +23,13 @@ BEGIN {
 }
 my $cwd = getcwd;
 
+# From: http://search.cpan.org/~stevan/perl/pod/perlvar.pod#$^X
+my $secure_perl_path = $Config{perlpath};
+if ( $^O ne 'VMS' ) {
+    $secure_perl_path .= $Config{_exe}
+        unless $secure_perl_path =~ m/$Config{_exe}$/i;
+}
+
 my ( $got, $stderr, $exit );
 my $expected = <<EOF;
 a: 1
@@ -31,7 +39,7 @@ extra: some other stuff
 EOF
 my $script      = "test-reproducible.pl";
 my $archive_dir = "$Bin/repro-archive";
-my $cmd         = "perl $Bin/$script --reprodir $archive_dir";
+my $cmd         = "$secure_perl_path $Bin/$script --reprodir $archive_dir";
 
 ( $got, $stderr, $exit ) = capture {
     system("$cmd -a 1 -b 'two words' -c string some other stuff");
