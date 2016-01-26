@@ -5,6 +5,31 @@
 [![Test Coverage](https://coveralls.io/repos/mfcovington/Log-Reproducible/badge.svg?branch=master&service=github)](https://coveralls.io/github/mfcovington/Log-Reproducible?branch=master)
 [![Kwalitee](http://cpants.cpanauthors.org/dist/Log-Reproducible.png)](http://cpants.cpanauthors.org/dist/Log-Reproducible)
 
+<!-- MarkdownTOC -->
+
+- [About](#about)
+- [Usage](#usage)
+    - [Creating Archives](#creating-archives)
+        - [With the `Log::Reproducible` module](#with-the-logreproducible-module)
+        - [With the `perlr` wrapper](#with-the-perlr-wrapper)
+        - [Other Archive Contents](#other-archive-contents)
+    - [Reproducing an Archived Analysis](#reproducing-an-archived-analysis)
+        - [Inconsistencies between current and archived conditions](#inconsistencies-between-current-and-archived-conditions)
+    - [Adding Archive Notes](#adding-archive-notes)
+    - [Where are the Archives Stored?](#where-are-the-archives-stored)
+        - [Default](#default)
+        - [Global](#global)
+        - [Script](#script)
+        - [Via Command Line](#via-command-line)
+    - [Git Repo Info](#git-repo-info)
+    - [Customization of command line options](#customization-of-command-line-options)
+- [Installation](#installation)
+- [Future Directions](#future-directions)
+
+<!-- /MarkdownTOC -->
+
+## About
+
 Increase your reproducibility with the Perl module Log::Reproducible.
 
 **TAGLINE:** Set it and forget it... *until you need it!*
