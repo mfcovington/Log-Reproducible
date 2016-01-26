@@ -33,7 +33,8 @@ my $builder = Module::Build->new(
         "YAML::Old"       => 0,
     },
     build_requires => {
-        'Test::More' => 0,
+        'Capture::Tiny' => 0,
+        'Test::More'    => 0,
     },
     configure_requires => {
         'Module::Build' => 0,

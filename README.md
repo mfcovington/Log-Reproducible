@@ -1,8 +1,36 @@
-*CPAN-compatible README coming soon...*
+# Log::Reproducible
 
-# Log::Reproducible (0.12.2)
+[![CPAN version](https://badge.fury.io/pl/Log-Reproducible.svg)](https://badge.fury.io/pl/Log-Reproducible)
+[![Build Status](https://travis-ci.org/mfcovington/Log-Reproducible.svg?branch=master)](https://travis-ci.org/mfcovington/Log-Reproducible)
+[![Test Coverage](https://coveralls.io/repos/mfcovington/Log-Reproducible/badge.svg?branch=master&service=github)](https://coveralls.io/github/mfcovington/Log-Reproducible?branch=master)
+[![Kwalitee](http://cpants.cpanauthors.org/dist/Log-Reproducible.png)](http://cpants.cpanauthors.org/dist/Log-Reproducible)
 
-Increase your reproducibility with the Perl module Log::Reproducible. 
+<!-- MarkdownTOC -->
+
+- [About](#about)
+- [Usage](#usage)
+    - [Creating Archives](#creating-archives)
+        - [With the `Log::Reproducible` module](#with-the-logreproducible-module)
+        - [With the `perlr` wrapper](#with-the-perlr-wrapper)
+        - [Other Archive Contents](#other-archive-contents)
+    - [Reproducing an Archived Analysis](#reproducing-an-archived-analysis)
+        - [Inconsistencies between current and archived conditions](#inconsistencies-between-current-and-archived-conditions)
+    - [Adding Archive Notes](#adding-archive-notes)
+    - [Where are the Archives Stored?](#where-are-the-archives-stored)
+        - [Default](#default)
+        - [Global](#global)
+        - [Script](#script)
+        - [Via Command Line](#via-command-line)
+    - [Git Repo Info](#git-repo-info)
+    - [Customization of command line options](#customization-of-command-line-options)
+- [Installation](#installation)
+- [Future Directions](#future-directions)
+
+<!-- /MarkdownTOC -->
+
+## About
+
+Increase your reproducibility with the Perl module Log::Reproducible.
 
 **TAGLINE:** Set it and forget it... *until you need it!*
 
@@ -35,7 +63,7 @@ Now, every time you run your script, the command line options and other argument
 
 #### With the `perlr` wrapper
 
-Can't or don't want to modify your script? When you install Log::Reproducible, a wrapper program called `perlr` gets installed in your path. Running scripts with `perlr` automatically loads Log::Reproducible even if your script doesn't. 
+Can't or don't want to modify your script? When you install Log::Reproducible, a wrapper program called `perlr` gets installed in your path. Running scripts with `perlr` automatically loads Log::Reproducible even if your script doesn't.
 
 ```sh
 perlr script-without-log-reproducible.pl
@@ -69,7 +97,7 @@ If it was run as `perl bin/sample.pl -a 1 -b 2 -c 3 OTHER ARGUMENTS`, the conten
     - SCRIPT DIR:
         ABSOLUTE: /path/to/working/dir/bin
         RELATIVE: bin
-    - ARCHIVE VERSION: Log::Reproducible 0.12.2
+    - ARCHIVE VERSION: Log::Reproducible 0.12.3
     - PERL:
         - VERSION: v5.20.0
         - PATH: /path/to/bin/perl
@@ -182,8 +210,8 @@ perl sample.pl --reprodir /path/to/archive
 If git is installed on your system and your script resides within a Git repository, a useful collection of info about the current state of the Git repository will be included in the archive:
 
 - Current branch
-- Truncated SHA1 hash of most recent commit 
-- Commit message of most recent commit 
+- Truncated SHA1 hash of most recent commit
+- Commit message of most recent commit
 - List of modified, added, removed, and unstaged files
 - A summary of changes to previously committed files (both staged and unstaged)
 
@@ -277,3 +305,5 @@ Build install
 
 - Standalone script that can be used upstream of any command line functions
 - Python version
+
+*Version 0.12.3*

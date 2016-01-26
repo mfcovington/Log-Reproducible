@@ -17,7 +17,7 @@ use YAML::Old qw(Dump LoadFile);    # YAML::XS & YAML::Syck aren't working prope
 # TODO: Standalone script that can be used upstream of any command line functions
 # TODO: Auto-build README using POD
 
-our $VERSION = '0.12.2';
+our $VERSION = '0.12.3';
 
 =head1 NAME
 
@@ -26,6 +26,18 @@ Log::Reproducible - Effortless record-keeping and enhanced reproducibility. Set 
 =head1 AUTHOR
 
 Michael F. Covington <mfcovington@gmail.com>
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright (C) 2014-2016, Michael F. Covington.
+
+This module is free software; you can redistribute it and/or
+modify it under the same terms as Perl 5.10.0. For more details,
+see the full text of the licenses in the file LICENSES.
+
+This program is distributed in the hope that it will be
+useful, but without any warranty; without even the implied
+warranty of merchantability or fitness for a particular purpose.
 
 =cut
 
