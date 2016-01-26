@@ -97,7 +97,7 @@ If it was run as `perl bin/sample.pl -a 1 -b 2 -c 3 OTHER ARGUMENTS`, the conten
     - SCRIPT DIR:
         ABSOLUTE: /path/to/working/dir/bin
         RELATIVE: bin
-    - ARCHIVE VERSION: Log::Reproducible 0.12.2
+    - ARCHIVE VERSION: Log::Reproducible 0.12.3
     - PERL:
         - VERSION: v5.20.0
         - PATH: /path/to/bin/perl
@@ -306,4 +306,4 @@ Build install
 - Standalone script that can be used upstream of any command line functions
 - Python version
 
-*Version 0.12.2*
+*Version 0.12.3*
