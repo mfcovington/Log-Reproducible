@@ -2,7 +2,12 @@
 
 # Log::Reproducible (0.12.2)
 
-Increase your reproducibility with the Perl module Log::Reproducible. 
+[![CPAN version](https://badge.fury.io/pl/Log-Reproducible.svg)](https://badge.fury.io/pl/Log-Reproducible)
+[![Build Status](https://travis-ci.org/mfcovington/Log-Reproducible.svg?branch=master)](https://travis-ci.org/mfcovington/Log-Reproducible)
+[![Test Coverage](https://coveralls.io/repos/mfcovington/Log-Reproducible/badge.svg?branch=master&service=github)](https://coveralls.io/github/mfcovington/Log-Reproducible?branch=master)
+[![Kwalitee](http://cpants.cpanauthors.org/dist/Log-Reproducible.png)](http://cpants.cpanauthors.org/dist/Log-Reproducible)
+
+Increase your reproducibility with the Perl module Log::Reproducible.
 
 **TAGLINE:** Set it and forget it... *until you need it!*
 
