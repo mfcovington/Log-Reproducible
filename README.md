@@ -1,6 +1,6 @@
 *CPAN-compatible README coming soon...*
 
-# Log::Reproducible (0.12.2)
+# Log::Reproducible
 
 [![CPAN version](https://badge.fury.io/pl/Log-Reproducible.svg)](https://badge.fury.io/pl/Log-Reproducible)
 [![Build Status](https://travis-ci.org/mfcovington/Log-Reproducible.svg?branch=master)](https://travis-ci.org/mfcovington/Log-Reproducible)
@@ -282,3 +282,5 @@ Build install
 
 - Standalone script that can be used upstream of any command line functions
 - Python version
+
+*Version 0.12.2*
