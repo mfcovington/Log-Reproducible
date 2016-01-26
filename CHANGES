@@ -1,5 +1,9 @@
 Revision history for Perl module Log::Reproducible
 
+0.12.4 2016-01-26
+
+  - Fix test that fails on windows machines and hangs elsewhere
+
 0.12.3 2016-01-25
 
   - Improve tests

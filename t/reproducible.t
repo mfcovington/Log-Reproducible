@@ -54,8 +54,7 @@ is_deeply( $got, $expected, 'Run and archive Perl script' );
 
 my $archive = get_recent_archive($archive_dir);
 ( $got, $stderr, $exit ) = capture {
-    # For some reason, test hangs without this: '';
-    system("''; $cmd --reproduce $archive_dir/$archive");
+    system("$cmd --reproduce $archive_dir/$archive;");
 };
 die $stderr if $exit != 0;
 is_deeply( $got, $expected, 'Run an archived Perl script' );
