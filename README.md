@@ -1,5 +1,3 @@
-*CPAN-compatible README coming soon...*
-
 # Log::Reproducible
 
 [![CPAN version](https://badge.fury.io/pl/Log-Reproducible.svg)](https://badge.fury.io/pl/Log-Reproducible)
