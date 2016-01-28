@@ -5,6 +5,23 @@ permalink: /changes/
 ---
 Revision history for Perl module Log::Reproducible
 
+0.12.4 2016-01-26
+
+  - Fix test that fails on windows machines and hangs elsewhere
+
+0.12.3 2016-01-25
+
+  - Improve tests
+  - Add badges to README
+  - Add table of contents to README
+  - Update Travis-CI configuration with Perl versions up to 5.22
+  - Add copyright and license information
+  - Configure bumpversion
+
+0.12.2 2016-01-25
+
+  - Improve tests
+
 0.12.1 2014-10-16
 
   - Log when an archive is reproduced
